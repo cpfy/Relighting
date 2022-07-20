@@ -73,9 +73,7 @@ SfM的过程：
 
 设计两点优化处理无约束图片的两个问题：1、**Photometric variation**；2、**Transient objects**
 
-模型整体架构如下：
 
-<img src="https://longtimenohack.com/posts/paper_reading/2021_martin_nerfw/image-20210721210508801.png" alt="NeRF in the Wild: Neural Radiance Fields for Unconstrained Photo  Collections - Jianfei Guo" style="zoom:50%;" />
 
 #### 潜在外观建模
 
@@ -106,18 +104,60 @@ $$
 
 * 瞬态成分变化及排除对静态干扰（待补充MLP公式3）
 
+##### 第三项MLP
+
+使用贝叶斯学习框架对颜色的不确定部分建模，假设观察到的像素强度是嘈杂无序的，噪声仅与输入相关（异方差的），我们认为观察颜色 $C_i(r)$ 各向同性的正态分布，该分布具有取决于图片和光线的方差 $\beta_i(r)^2$ 及平均值 $\hat{C}_i(r)$ 
+
+这一方差有与颜色类似的alpha-合成方式，基于瞬态密度 $\sigma_i^{(\tau)}(t)$ ：
+$$
+\hat{\beta}_i(r)=\mathcal{R}(r,\beta_i,\sigma_i^{(\tau)})
+$$
+ 为使得瞬态模块对于不同图片变化，为每张训练图  $\mathcal{I}_i$ 分配第二个嵌入向量 $\mathcal{l}_i^{(\tau)}\in\R^{n^{(\tau)}}$  ，作为瞬态MLP的输入：
+$$
+[\sigma_i^{(\tau)}(t),c_i^{(\tau)}(t),\tilde{\beta}_i(t)]=\text{MLP}_{\theta_3}\left(z(t),\mathcal{l}_i^{(\tau)}\right)\\
+\beta_i(t)=\beta_\min+\log\left(1+\exp\left(\tilde{\beta_i(t)}\right)\right)
+$$
+分别对sigma和c用ReLU、sigmoid激活函数，对 $\beta_i(t)$ 用softplus作为激活函数
+
+参见模型整体架构如下：
+
+<img src="https://longtimenohack.com/posts/paper_reading/2021_martin_nerfw/image-20210721210508801.png" alt="NeRF in the Wild: Neural Radiance Fields for Unconstrained Photo  Collections - Jianfei Guo" style="zoom:50%;" />
+
+##### L损失函数
+
+对于光线r，图片i，已知真实颜色 $C_i(r)$ ，损失函数为：
+$$
+L_i(r)=\frac{\left\| C_i(r)-\hat{C}_i(r) \right\|_2^2}{2\beta_i(r)^2}+
+\frac{\log\beta_i(r)^2}{2}+
+\frac{\lambda_u}{K}\sum_{k=1}^K\sigma_i^{(\tau)}(t_k)
+$$
+参数解释：
+
+* 前两项为 $C_i(r)$ 的负对数似然，由正态分布及均值 $\hat{C}_i(r)$ 、方差 $\beta_i(r)^2$ 导出
+
+* 较大的方差 $\beta_i(r)^2$ 会减弱分配给像素的重要性？第一项与第二项互相制衡
+* 第三项是在瞬态密度 $\sigma_i^{(\tau)}(t)$ 上的L1正则化矩阵，并与lambda相乘。避免模型用瞬态密度解释静态现象
+
+
+
+最终测试时扔掉transient部分，仅渲染 $\sigma(t)$ 及 $c(t)$ 
+
+![不同MLP部分示意](https://user-images.githubusercontent.com/30110832/179965091-5ba90ed3-e12b-40ad-95e3-d1dd55a6e130.png)
+
 #### 优化
 
-使用**coarse-fine** ，损失函数略变化
+使用 **coarse-fine** 双模型，fine模型用上文模型及loss，coarse模型只使用潜在外观建模模块。训练时同时优化外观、瞬态嵌入向量
+
+损失函数略变化
 $$
 \sum_{ij}L_i(r_{ij})+
 \frac{1}{2}\left\| C(r_{ij})-\hat{C}^c(r_{ij}) \right\|_2^2
 $$
-四个超参数：$\lambda_u,\beta_{\min},n^{(a)},n^{(\tau)}$
+四个超参数：$\lambda_u,\beta_{\min}$ ，嵌入向量维度 $n^{(a)},n^{(\tau)}$
 
 ### 5.实验
 
-与NRW、NeRF、NeRF-A、NeRF-W对比
+与NRW、NeRF、NeRF-A、NeRF-W两个消融实验对比
 
 
 
