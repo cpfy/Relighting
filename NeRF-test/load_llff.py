@@ -1,9 +1,12 @@
 import numpy as np
 import os, imageio
 
-
 ########## Slightly modified version of LLFF data loading code 
 ##########  see https://github.com/Fyusion/LLFF for original
+
+##### 用于加载数据集为LLFF类型的输入图片，对外提供load_llff_data函数接口给run_nerf #####
+
+
 
 def _minify(basedir, factors=[], resolutions=[]):
     needtoload = False
@@ -58,7 +61,7 @@ def _minify(basedir, factors=[], resolutions=[]):
             
         
         
-        
+
 def _load_data(basedir, factor=None, width=None, height=None, load_imgs=True):
     
     poses_arr = np.load(os.path.join(basedir, 'poses_bounds.npy'))
@@ -241,7 +244,6 @@ def spherify_poses(poses, bds):
     
 
 def load_llff_data(basedir, factor=8, recenter=True, bd_factor=.75, spherify=False, path_zflat=False):
-    
 
     poses, bds, imgs = _load_data(basedir, factor=factor) # factor=8 downsamples original imgs by 8x
     print('Loaded', basedir, bds.min(), bds.max())
