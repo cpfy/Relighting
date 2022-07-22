@@ -141,6 +141,9 @@ def render(H, W, K, chunk=1024*32, rays=None, c2w=None, ndc=True,
 
 
 def render_path(render_poses, hwf, K, chunk, render_kwargs, gt_imgs=None, savedir=None, render_factor=0):
+    """此处gt_imgs、focal等参数完全没用上，很奇怪；
+      render_factor: 降采样以加速渲染，降低的pixel精度倍数
+    """
 
     H, W, focal = hwf
 
@@ -199,7 +202,7 @@ def create_nerf(args):
     model = NeRF(D=args.netdepth, W=args.netwidth,
                  input_ch=input_ch, output_ch=output_ch, skips=skips,
                  input_ch_views=input_ch_views, use_viewdirs=args.use_viewdirs).to(device)      # coarse model
-    grad_vars = list(model.parameters())
+    grad_vars = list(model.parameters())    # parameters输出模型参数
 
     model_fine = None
     if args.N_importance > 0:
@@ -216,7 +219,7 @@ def create_nerf(args):
     # Create optimizer
     optimizer = torch.optim.Adam(params=grad_vars, lr=args.lrate, betas=(0.9, 0.999))
 
-    start = 0
+    start = 0   # 训练起始step，返回值
     basedir = args.basedir
     expname = args.expname
 
@@ -229,10 +232,10 @@ def create_nerf(args):
         ckpts = [os.path.join(basedir, expname, f) for f in sorted(os.listdir(os.path.join(basedir, expname))) if 'tar' in f]
 
     print('Found ckpts', ckpts)
-    if len(ckpts) > 0 and not args.no_reload:
+    if len(ckpts) > 0 and not args.no_reload:   # 有ckpt时自动调用
         ckpt_path = ckpts[-1]
         print('Reloading from', ckpt_path)
-        ckpt = torch.load(ckpt_path)
+        ckpt = torch.load(ckpt_path, map_location='cpu')
 
         start = ckpt['global_step']
         optimizer.load_state_dict(ckpt['optimizer_state_dict'])
@@ -269,7 +272,7 @@ def create_nerf(args):
     return render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer
 
 
-# todo 从raw获取像素输出
+# 从模型raw输出解析有意义的值
 def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=False):
     """Transforms model's predictions to semantically meaningful values.
     Args:
@@ -283,17 +286,22 @@ def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=F
         weights: [num_rays, num_samples]. Weights assigned to each sampled color.
         depth_map: [num_rays]. Estimated distance to object.
     """
+    # raw套一层relu就是该点体密度 \sigma_j 预测值
+    # 公式中 1-\exp(-\sigma_i\delta_i) 一项，此函数计算体密度即射线终止概率
     raw2alpha = lambda raw, dists, act_fn=F.relu: 1.-torch.exp(-act_fn(raw)*dists)
 
-    dists = z_vals[...,1:] - z_vals[...,:-1]
+    dists = z_vals[...,1:] - z_vals[...,:-1]    # 错位相减，一键计算 t_{i+1}-t_i
     dists = torch.cat([dists, torch.Tensor([1e10]).expand(dists[...,:1].shape)], -1)  # [N_rays, N_samples]
 
+    # 对最高维求p范数 (x1^p+...+xn^p)^{1/p}，默认为Frobenius范数即p=2，相当于张量的模长
+    # 之前dists仅在某一维度上计算，zi-zj，此处倍乘模长得到空间距离
     dists = dists * torch.norm(rays_d[...,None,:], dim=-1)
 
+    # raw 的最终内容依赖于 **kwargs，最外层传值为render_kwargs_test，create_nerf的第二个返回值
     rgb = torch.sigmoid(raw[...,:3])  # [N_rays, N_samples, 3]
     noise = 0.
     if raw_noise_std > 0.:
-        noise = torch.randn(raw[...,3].shape) * raw_noise_std
+        noise = torch.randn(raw[...,3].shape) * raw_noise_std       # 混入噪声
 
         # Overwrite randomly sampled data if pytest
         if pytest:
@@ -301,13 +309,17 @@ def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=F
             noise = np.random.rand(*list(raw[...,3].shape)) * raw_noise_std
             noise = torch.Tensor(noise)
 
-    alpha = raw2alpha(raw[...,3] + noise, dists)  # [N_rays, N_samples]
-    # weights = alpha * tf.math.cumprod(1.-alpha + 1e-10, -1, exclusive=True)
+    alpha = raw2alpha(raw[...,3] + noise, dists)    # [N_rays, N_samples]
+
+    # [原式]weights = alpha * tf.math.cumprod(1.-alpha + 1e-10, -1, exclusive=True)
+    # cumprod将同一行/列矩阵元素累计连乘，如[1,2,3,4,5]->[1,2,6,24,120]
+    # cumprod用于表示离散形式的 T_i，连乘即为e的指数上相加
+    # weight_i = T_i * (1-\exp(-\sigma_i \delta_i))
     weights = alpha * torch.cumprod(torch.cat([torch.ones((alpha.shape[0], 1)), 1.-alpha + 1e-10], -1), -1)[:, :-1]
     rgb_map = torch.sum(weights[...,None] * rgb, -2)  # [N_rays, 3]
 
     depth_map = torch.sum(weights * z_vals, -1)
-    disp_map = 1./torch.max(1e-10 * torch.ones_like(depth_map), depth_map / torch.sum(weights, -1))
+    disp_map = 1./torch.max(1e-10 * torch.ones_like(depth_map), depth_map / torch.sum(weights, -1))     # 逆深度图，1e-10保证分母不是0
     acc_map = torch.sum(weights, -1)
 
     if white_bkgd:
@@ -316,7 +328,7 @@ def raw2outputs(raw, z_vals, rays_d, raw_noise_std=0, white_bkgd=False, pytest=F
     return rgb_map, disp_map, acc_map, weights, depth_map
 
 
-# 渲染单像素N条光线并返回值
+# 单像素发出光线希望渲染并返回rgb、disp等结果
 def render_rays(ray_batch,
                 network_fn,
                 network_query_fn,
@@ -393,7 +405,7 @@ def render_rays(ray_batch,
 
 
 #     raw = run_network(pts)
-    raw = network_query_fn(pts, viewdirs, network_fn)   # 逐点查询的RGB、density参数
+    raw = network_query_fn(pts, viewdirs, network_fn)   # 逐点查询RGB、density参数
     rgb_map, disp_map, acc_map, weights, depth_map = raw2outputs(raw, z_vals, rays_d, raw_noise_std, white_bkgd, pytest=pytest)
 
     # 每条光线额外采样
@@ -403,8 +415,9 @@ def render_rays(ray_batch,
 
         z_vals_mid = .5 * (z_vals[...,1:] + z_vals[...,:-1])
         z_samples = sample_pdf(z_vals_mid, weights[...,1:-1], N_importance, det=(perturb==0.), pytest=pytest)
-        z_samples = z_samples.detach()
+        z_samples = z_samples.detach()      # 截断正/反向传播
 
+        # sort第二个返回值为input tensor中的索引，dim=-1
         z_vals, _ = torch.sort(torch.cat([z_vals, z_samples], -1), -1)
         pts = rays_o[...,None,:] + rays_d[...,None,:] * z_vals[...,:,None] # [N_rays, N_samples + N_importance, 3]
 
@@ -418,7 +431,7 @@ def render_rays(ray_batch,
     if retraw:
         ret['raw'] = raw
     if N_importance > 0:
-        ret['rgb0'] = rgb_map_0
+        ret['rgb0'] = rgb_map_0    # xxx_0为第一次采样结果
         ret['disp0'] = disp_map_0
         ret['acc0'] = acc_map_0
         ret['z_std'] = torch.std(z_samples, dim=-1, unbiased=False)  # [N_rays]
@@ -476,7 +489,7 @@ def config_parser():
     parser.add_argument("--N_importance", type=int, default=0,
                         help='number of additional fine samples per ray')
     parser.add_argument("--perturb", type=float, default=1.,
-                        help='set to 0. for no jitter, 1. for jitter')      # ?!这是tor加了jitter优化
+                        help='set to 0. for no jitter, 1. for jitter')      # 1=加入扰动。xs,跟jittor框架无关
     parser.add_argument("--use_viewdirs", action='store_true',
                         help='use full 5D input instead of 3D')             # 默认开5D输入，可测试去掉d的无高光效果
     parser.add_argument("--i_embed", type=int, default=0,
@@ -544,13 +557,13 @@ def config_parser():
     return parser
 
 
-# 核心训练
+# 核心训练全流程
 def train():
 
     parser = config_parser()
     args = parser.parse_args()
 
-    # Load data
+    # Load data[各种数据格式的加载]
     K = None
     if args.dataset_type == 'llff':
         images, poses, bds, render_poses, i_test = load_llff_data(args.datadir, args.factor,
@@ -654,17 +667,17 @@ def train():
     render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer = create_nerf(args)
     global_step = start
 
-    bds_dict = {
+    bds_dict = {        # 不同的data_type此参数不同
         'near' : near,
         'far' : far,
     }
-    render_kwargs_train.update(bds_dict)
+    render_kwargs_train.update(bds_dict)    # kwargs为字典格式，update插入新字典元素
     render_kwargs_test.update(bds_dict)
 
-    # Move testing data to GPU
+    # Move testing data to GPU [device在最开始最外层全局定义好了]
     render_poses = torch.Tensor(render_poses).to(device)
 
-    # Short circuit if only rendering out from trained model
+    # Short circuit if only rendering out from trained model[仅渲染，加载已有模型]
     if args.render_only:
         print('RENDER ONLY')
         with torch.no_grad():
@@ -693,10 +706,10 @@ def train():
         print('get rays')
         rays = np.stack([get_rays_np(H, W, K, p) for p in poses[:,:3,:4]], 0) # [N, ro+rd, H, W, 3]
         print('done, concats')
-        rays_rgb = np.concatenate([rays, images[:,None]], 1) # [N, ro+rd+rgb, H, W, 3]
-        rays_rgb = np.transpose(rays_rgb, [0,2,3,1,4]) # [N, H, W, ro+rd+rgb, 3]
-        rays_rgb = np.stack([rays_rgb[i] for i in i_train], 0) # train images only
-        rays_rgb = np.reshape(rays_rgb, [-1,3,3]) # [(N-1)*H*W, ro+rd+rgb, 3]
+        rays_rgb = np.concatenate([rays, images[:,None]], 1)    # [N, ro+rd+rgb, H, W, 3]
+        rays_rgb = np.transpose(rays_rgb, [0,2,3,1,4])          # [N, H, W, ro+rd+rgb, 3]
+        rays_rgb = np.stack([rays_rgb[i] for i in i_train], 0)  # train images only
+        rays_rgb = np.reshape(rays_rgb, [-1,3,3])               # [(N-1)*H*W, ro+rd+rgb, 3]
         rays_rgb = rays_rgb.astype(np.float32)
         print('shuffle rays')
         np.random.shuffle(rays_rgb)
@@ -887,6 +900,6 @@ def train():
 
 
 if __name__=='__main__':
-    torch.set_default_tensor_type('torch.cuda.FloatTensor')
+    # torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
     train()

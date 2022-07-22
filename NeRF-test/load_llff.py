@@ -61,7 +61,7 @@ def _minify(basedir, factors=[], resolutions=[]):
             
         
         
-
+# 加载数据
 def _load_data(basedir, factor=None, width=None, height=None, load_imgs=True):
     
     poses_arr = np.load(os.path.join(basedir, 'poses_bounds.npy'))

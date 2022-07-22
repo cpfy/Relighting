@@ -193,7 +193,7 @@ def get_rays_np(H, W, K, c2w):
 # NDC坐标系下的o和d坐标
 def ndc_rays(H, W, focal, near, rays_o, rays_d):
     # Shift ray origins to near plane
-    t = -(near + rays_o[...,2]) / rays_d[...,2]     # 三个点表示双冒号的切片方式，a[...,x]等价于a[:,:,x]
+    t = -(near + rays_o[...,2]) / rays_d[...,2]     # 三点表示任意个双冒号切片的省略，a[...,x]等价于a[:,:,x]
     rays_o = rays_o + t[...,None] * rays_d          # [...,None]切片保留全部在最后一维升维
     
     # Projection[某种方式投影到NDC下，与f与fov的tan换算关系有关？]
@@ -215,15 +215,18 @@ def ndc_rays(H, W, focal, near, rays_o, rays_d):
 def sample_pdf(bins, weights, N_samples, det=False, pytest=False):
     # Get pdf
     weights = weights + 1e-5    # prevent nans(Not a Number)
-    pdf = weights / torch.sum(weights, -1, keepdim=True)
-    cdf = torch.cumsum(pdf, -1)
+    pdf = weights / torch.sum(weights, -1, keepdim=True)    # 权重随时间分布的概率密度函数取值
+    cdf = torch.cumsum(pdf, -1)     # 同一行/列/维度累加，概率密度中的F(x)
     cdf = torch.cat([torch.zeros_like(cdf[...,:1]), cdf], -1)  # (batch, len(bins))
 
     # Take uniform samples
+    # det=true表明perturb=0，不加入扰动
     if det:
         u = torch.linspace(0., 1., steps=N_samples)
         u = u.expand(list(cdf.shape[:-1]) + [N_samples])
     else:
+        # rand=均匀分布；randn=标准正态分布
+        # 原shape最后一维替换为N_samples
         u = torch.rand(list(cdf.shape[:-1]) + [N_samples])
 
     # Pytest, overwrite u with numpy's fixed random numbers
@@ -238,8 +241,8 @@ def sample_pdf(bins, weights, N_samples, det=False, pytest=False):
         u = torch.Tensor(u)
 
     # Invert CDF
-    u = u.contiguous()
-    inds = torch.searchsorted(cdf, u, right=True)
+    u = u.contiguous()      # 保证tensor底层存储顺序与按行优先一维展开的元素顺序一致，而不是套着虚假的view
+    inds = torch.searchsorted(cdf, u, right=True)   # 在排序后的cdf中搜索u中元素的索引值，right表示同值时往右贪心取大索引
     below = torch.max(torch.zeros_like(inds-1), inds-1)
     above = torch.min((cdf.shape[-1]-1) * torch.ones_like(inds), inds)
     inds_g = torch.stack([below, above], -1)  # (batch, N_samples, 2)
@@ -247,11 +250,11 @@ def sample_pdf(bins, weights, N_samples, det=False, pytest=False):
     # cdf_g = tf.gather(cdf, inds_g, axis=-1, batch_dims=len(inds_g.shape)-2)
     # bins_g = tf.gather(bins, inds_g, axis=-1, batch_dims=len(inds_g.shape)-2)
     matched_shape = [inds_g.shape[0], inds_g.shape[1], cdf.shape[-1]]
-    cdf_g = torch.gather(cdf.unsqueeze(1).expand(matched_shape), 2, inds_g)
-    bins_g = torch.gather(bins.unsqueeze(1).expand(matched_shape), 2, inds_g)
+    cdf_g = torch.gather(cdf.unsqueeze(1).expand(matched_shape), 2, inds_g)     # unsq(1)表示在第1维上增加一维"1"
+    bins_g = torch.gather(bins.unsqueeze(1).expand(matched_shape), 2, inds_g)   # gather在输入的dim=2按inds_g索引取值
 
     denom = (cdf_g[...,1]-cdf_g[...,0])
-    denom = torch.where(denom<1e-5, torch.ones_like(denom), denom)
+    denom = torch.where(denom<1e-5, torch.ones_like(denom), denom)  # where相当于三目运算，满足从x取，否则y取
     t = (u-cdf_g[...,0])/denom
     samples = bins_g[...,0] + t * (bins_g[...,1]-bins_g[...,0])
 
