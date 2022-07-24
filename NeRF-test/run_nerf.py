@@ -235,7 +235,8 @@ def create_nerf(args):
     if len(ckpts) > 0 and not args.no_reload:   # 有ckpt时自动调用
         ckpt_path = ckpts[-1]
         print('Reloading from', ckpt_path)
-        ckpt = torch.load(ckpt_path, map_location='cpu')
+        # ckpt = torch.load(ckpt_path, map_location='cpu')
+        ckpt = torch.load(ckpt_path)    # For gpu
 
         start = ckpt['global_step']
         optimizer.load_state_dict(ckpt['optimizer_state_dict'])
@@ -510,9 +511,9 @@ def config_parser():
 
     # training options
     parser.add_argument("--precrop_iters", type=int, default=0,
-                        help='number of steps to train on central crops')
+                        help='number of steps to train on central crops')           # 在中心剪裁区的训练轮次
     parser.add_argument("--precrop_frac", type=float,
-                        default=.5, help='fraction of img taken for central crops')
+                        default=.5, help='fraction of img taken for central crops') # 在中心剪裁区的微元比例
 
     # dataset options
     parser.add_argument("--dataset_type", type=str, default='llff',
@@ -735,7 +736,7 @@ def train():
     # writer = SummaryWriter(os.path.join(basedir, 'summaries', expname))
 
     start = start + 1
-    for i in trange(start, N_iters):
+    for i in trange(start, N_iters):    # 训练200000轮
         time0 = time.time()
 
         # Sample random ray batch
@@ -754,20 +755,20 @@ def train():
 
         else:
             # Random from one image
-            img_i = np.random.choice(i_train)
-            target = images[img_i]
+            img_i = np.random.choice(i_train)   # 随机选择一张图训练
+            target = images[img_i]              # 该图ground truth
             target = torch.Tensor(target).to(device)
-            pose = poses[img_i, :3,:4]
+            pose = poses[img_i, :3,:4]          # 取该图相机姿态参数
 
             if N_rand is not None:
                 rays_o, rays_d = get_rays(H, W, K, torch.Tensor(pose))  # (H, W, 3), (H, W, 3)
 
-                if i < args.precrop_iters:
-                    dH = int(H//2 * args.precrop_frac)
+                if i < args.precrop_iters:      # 在中心剪裁区的训练轮次
+                    dH = int(H//2 * args.precrop_frac)      # 分割多个微元
                     dW = int(W//2 * args.precrop_frac)
                     coords = torch.stack(
                         torch.meshgrid(
-                            torch.linspace(H//2 - dH, H//2 + dH - 1, 2*dH),
+                            torch.linspace(H//2 - dH, H//2 + dH - 1, 2*dH),     # meshgrid用于生成二维网格，此处构造 x*y 个像素
                             torch.linspace(W//2 - dW, W//2 + dW - 1, 2*dW)
                         ), -1)
                     if i == start:
@@ -900,6 +901,6 @@ def train():
 
 
 if __name__=='__main__':
-    # torch.set_default_tensor_type('torch.cuda.FloatTensor')
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')       # For gpu
 
     train()

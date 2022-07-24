@@ -9,3 +9,4 @@ data/*
 logs/*
 
 .idea/
+!logs/fern_test/renderonly_path_200000/video.mp4
