@@ -1,8 +1,9 @@
 import argparse
 
+# 训练相关参数解析
 def get_opts():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg_path', type=str, help='config path')
+    parser.add_argument('--cfg_path', type=str, help='config path')     # 额外的cfg配置文件
     parser.add_argument('--batch_size', type=int, default=1024,
                         help='batch size')
     parser.add_argument('--test_batch_size', type=int, default=256,

@@ -27,6 +27,7 @@ depth_percent = 0
 skip = 1
 
 
+# 旅游照片集：关于数据读取、处理
 class PhototourismDataset(Dataset):
     def __init__(
         self,
@@ -62,7 +63,9 @@ class PhototourismDataset(Dataset):
         """
         self.split_path = split_path
         self.root_dir = root_dir
-        self.split = split
+        self.split = split  # [指用途区分]共分train、eval、test_train、val、test五类
+
+        # 图像W、H降低规模的倍率，原始d=1在BG上将消耗40G内存？！
         assert (
             img_downscale >= 1
         ), "image can only be downsampled, please set img_downscale>=1!"
@@ -72,13 +75,13 @@ class PhototourismDataset(Dataset):
         self.val_num = max(1, val_num)  # at least 1
         self.define_transforms()
         self.white_back = False
-        self.semantic_map_path = semantic_map_path
+        self.semantic_map_path = semantic_map_path      #todo 语义映射？后文读取npz用
         self.with_semantics = with_semantics
 
         self.scene_origin = scene_origin
         self.scene_radius = scene_radius
 
-        self.sfm_path = sfm_path
+        self.sfm_path = sfm_path        # 3Ddianyun
         
         # hard code sfm depth padding
         scene_name = self.root_dir.rsplit('/')[-1]
@@ -89,7 +92,7 @@ class PhototourismDataset(Dataset):
         elif scene_name in ['lincoln_memorial', 'pantheon_exterior']:
             depth_percent = 0.0
         
-        self.depth_percent = depth_percent
+        self.depth_percent = depth_percent  # 也许和不同数据集特性有关
         
         print(f"reading sfm result from {self.sfm_path}...")
 
@@ -121,6 +124,7 @@ class PhototourismDataset(Dataset):
             print("Cached rays loaded to torch!")
         self.read_meta()
 
+    # 似乎是观察视点所在球体，此函数后废弃
     def vis_sphere(self, center_id=47129, radius=4.6):
         pts3d = read_points3d_binary(
             os.path.join(self.root_dir, f"dense/{self.sfm_path}/points3D.bin")
@@ -146,6 +150,7 @@ class PhototourismDataset(Dataset):
 
         exit(0)
 
+    # 返回每张图片的深度、权重（衡量图像数据有效性/质量）、归一化的方向向量
     def get_colmap_depth(
         self,
         img_p3d_all,
@@ -201,12 +206,13 @@ class PhototourismDataset(Dataset):
         projected = intrinsic @ extrinsic[:3] @ img_p3d.T
 
         depth = projected[2, :]
-        weight = 2 * torch.exp(-((img_err / Err_mean) ** 2))
+        weight = 2 * torch.exp(-((img_err / Err_mean) ** 2))    # 错误比率大的图片分配权重指数级小
 
         depth_all[img_2d[:, 1], img_2d[:, 0]] = depth
         weights_all[img_2d[:, 1], img_2d[:, 0]] = weight
         return depth_all.cpu() * dir_norm.cpu(), weights_all.cpu()
 
+    # 从sfm点云建立八叉树，建模时voxel扩展可提升精度
     def get_octree(self, device, expand, radius=1):
         scene_config_path = os.path.join(self.root_dir, "config.yaml")
         with open(scene_config_path, "r") as yamlfile:
@@ -232,6 +238,7 @@ class PhototourismDataset(Dataset):
         octree_data["level"] = level
         return octree_data
 
+    # 计算光线的最近、最远相交voxel
     def near_far_voxel(self, octree_data, rays_o, rays_d, image_name, chunk_size=65536):
         """generate near for from intersection with sparse voxel.
            Input and output are in sfm coordinate system
@@ -703,7 +710,7 @@ class PhototourismDataset(Dataset):
             return self.N_images_train
         if self.split == "val":
             return self.val_num
-        return len(self.poses_test)
+        return len(self.poses_test)     # 此时为test类别
 
     def __getitem__(self, idx):
         if self.split == "train":  # use data in the buffers

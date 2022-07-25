@@ -57,6 +57,7 @@ def get_local_split(data, world_size, local_rank):
     return local_data
 
 
+# 一整套模型与训练系统
 class NeuconWSystem(LightningModule):
     def __init__(self, hparams, config, caches):
         super().__init__()

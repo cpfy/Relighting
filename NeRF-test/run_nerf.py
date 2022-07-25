@@ -226,6 +226,7 @@ def create_nerf(args):
     ##########################
 
     # Load checkpoints
+    # 自动扫描.tar训练文件及checkpoints的此时代数
     if args.ft_path is not None and args.ft_path!='None':
         ckpts = [args.ft_path]
     else:
@@ -676,6 +677,7 @@ def train():
     render_kwargs_test.update(bds_dict)
 
     # Move testing data to GPU [device在最开始最外层全局定义好了]
+    # 渲染时的各帧相机姿态
     render_poses = torch.Tensor(render_poses).to(device)
 
     # Short circuit if only rendering out from trained model[仅渲染，加载已有模型]
@@ -695,7 +697,7 @@ def train():
 
             rgbs, _ = render_path(render_poses, hwf, K, args.chunk, render_kwargs_test, gt_imgs=images, savedir=testsavedir, render_factor=args.render_factor)
             print('Done rendering', testsavedir)
-            imageio.mimwrite(os.path.join(testsavedir, 'video.mp4'), to8b(rgbs), fps=30, quality=8)
+            imageio.mimwrite(os.path.join(testsavedir, 'video.mp4'), to8b(rgbs), fps=30, quality=8)     # 120帧合成(30fps,4s)视频
 
             return
 
@@ -726,7 +728,7 @@ def train():
         rays_rgb = torch.Tensor(rays_rgb).to(device)
 
 
-    N_iters = 200000 + 1
+    N_iters = 210000 + 1
     print('Begin')
     print('TRAIN views are', i_train)
     print('TEST views are', i_test)
@@ -776,13 +778,13 @@ def train():
                 else:
                     coords = torch.stack(torch.meshgrid(torch.linspace(0, H-1, H), torch.linspace(0, W-1, W)), -1)  # (H, W, 2)
 
-                coords = torch.reshape(coords, [-1,2])  # (H * W, 2)
+                coords = torch.reshape(coords, [-1,2])                      # (H * W, 2)
                 select_inds = np.random.choice(coords.shape[0], size=[N_rand], replace=False)  # (N_rand,)
-                select_coords = coords[select_inds].long()  # (N_rand, 2)
-                rays_o = rays_o[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
-                rays_d = rays_d[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
+                select_coords = coords[select_inds].long()                  # (N_rand, 2)
+                rays_o = rays_o[select_coords[:, 0], select_coords[:, 1]]   # (N_rand, 3)
+                rays_d = rays_d[select_coords[:, 0], select_coords[:, 1]]   # (N_rand, 3)
                 batch_rays = torch.stack([rays_o, rays_d], 0)
-                target_s = target[select_coords[:, 0], select_coords[:, 1]]  # (N_rand, 3)
+                target_s = target[select_coords[:, 0], select_coords[:, 1]] # (N_rand, 3)
 
         #####  Core optimization loop  #####
         rgb, disp, acc, extras = render(H, W, K, chunk=args.chunk, rays=batch_rays,

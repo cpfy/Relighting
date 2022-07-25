@@ -1,6 +1,8 @@
-from matplotlib.colors import BoundaryNorm
+# from matplotlib.colors import BoundaryNorm
 from yacs.config import CfgNode as CN
 
+# defaults.py文件均用于全部参数配置
+# CN容器装载参数，管理配置，也可读写yaml用
 _CN = CN()
 
 ##############  ↓  NEUS-W Pipeline  ↓  ##############
@@ -89,12 +91,13 @@ _CN.DATASET.PHOTOTOURISM.CACHE_DIR = 'cache'
 _CN.DATASET.PHOTOTOURISM.CACHE_TYPE = 'npz'
 _CN.DATASET.PHOTOTOURISM.SEMANTIC_MAP_PATH = 'semantic_maps'
 _CN.DATASET.PHOTOTOURISM.WITH_SEMANTICS = True
+
 ##############  Trainer  ##############
 _CN.TRAINER = CN()
 _CN.TRAINER.WORLD_SIZE = 1
-_CN.TRAINER.CANONICAL_BS = 2048
-_CN.TRAINER.CANONICAL_LR = 1e-3
-_CN.TRAINER.SCALING = None  # this will be calculated automatically
+_CN.TRAINER.CANONICAL_BS = 2048     # 标准batch size
+_CN.TRAINER.CANONICAL_LR = 1e-3     # 标准leaning rate
+_CN.TRAINER.SCALING = None          # this will be calculated automatically
 _CN.TRAINER.SAVE_DIR = 'checkpoints'
 _CN.TRAINER.VAL_FREQ = 0.125
 _CN.TRAINER.SAVE_FREQ = 5000

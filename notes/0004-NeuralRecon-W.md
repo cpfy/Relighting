@@ -135,3 +135,22 @@ hybrid提升准确度；一些优化加速方案
 
 > https://openheritage3d.org/project.php?id=d51v-fq77
 
+
+
+### 实现
+
+[1] yacs库配置实验超参数
+
+> https://zhuanlan.zhihu.com/p/366289700
+
+[2] 优秀的Pytorch-Lighting库及使用
+
+> https://zhuanlan.zhihu.com/p/353985363
+>
+> 官方文档：https://pytorch-lightning.readthedocs.io/
+>
+> cang'khttps://github.com/Lightning-AI/lightning
+
+[3] 图像质量评价指标 PSNR 和 SSIM
+
+> https://zhuanlan.zhihu.com/p/50757421
