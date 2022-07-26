@@ -33,3 +33,6 @@ open3d==0.12.0
 # mmsegmentation
 mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.11/index.html
 mmsegmentation
+
+
+# 此处少了torchvision、kaolin

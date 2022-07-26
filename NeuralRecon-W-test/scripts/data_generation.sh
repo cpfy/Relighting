@@ -25,3 +25,5 @@ python tools/prepare_data/prepare_data_cache.py \
 --img_downscale 1 \
 --semantic_map_path semantic_maps --split_to_chunks 64 \
 2>&1|tee log/${jobname}.log
+
+# tee指令用于读取标准输入，将内容输出成文件

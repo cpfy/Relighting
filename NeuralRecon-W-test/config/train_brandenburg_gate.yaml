@@ -86,4 +86,4 @@ TRAINER:
   LR_SCHEDULER: 'none'
   SAVE_DIR: './checkpoints'
   VAL_FREQ: 10000.0
-  SAVE_FREQ: 10000
+  SAVE_FREQ: 10000    # 保存频率
