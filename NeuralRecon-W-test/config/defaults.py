@@ -40,12 +40,13 @@ _CN.NEUCONW.FLOOR_LABELS = ['road']
 _CN.NEUCONW.DEPTH_LOSS = False
 
 # network config
-_CN.NEUCONW.SDF_CONFIG = CN()
-_CN.NEUCONW.SDF_CONFIG.d_in = 3
+# 第一个SDF的Net参数：d=\text{MLP}_{\text{SDF}}(x)
+_CN.NEUCONW.SDF_CONFIG = CN()           # CN()容器的嵌套，外面直接调用config.NEUCONW.SDF_CONFIG
+_CN.NEUCONW.SDF_CONFIG.d_in = 3         # 输入仅为x的三维坐标xyz，因此in=3
 _CN.NEUCONW.SDF_CONFIG.d_out = 513
 _CN.NEUCONW.SDF_CONFIG.d_hidden = 512
 _CN.NEUCONW.SDF_CONFIG.n_layers = 8
-_CN.NEUCONW.SDF_CONFIG.skip_in = (4,)
+_CN.NEUCONW.SDF_CONFIG.skip_in = (4,)   # 依然保留第[4]层的skip connection
 _CN.NEUCONW.SDF_CONFIG.multires = 6
 _CN.NEUCONW.SDF_CONFIG.bias = 0.5
 _CN.NEUCONW.SDF_CONFIG.scale = 1
@@ -53,6 +54,7 @@ _CN.NEUCONW.SDF_CONFIG.geometric_init = True
 _CN.NEUCONW.SDF_CONFIG.weight_norm = True
 _CN.NEUCONW.SDF_CONFIG.inside_outside = False
 
+# 第一个司掌Color的Net参数
 _CN.NEUCONW.COLOR_CONFIG = CN()
 _CN.NEUCONW.COLOR_CONFIG.d_in = 9
 _CN.NEUCONW.COLOR_CONFIG.d_feature = 512

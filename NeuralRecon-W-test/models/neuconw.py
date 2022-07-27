@@ -4,6 +4,7 @@ from torch import nn
 from collections import OrderedDict
 
 
+# 此段与nerf.py相同
 class Embedder:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
@@ -56,6 +57,7 @@ def get_embedder(multires, input_dims=3):
 
 
 # This implementation is borrowed from IDR: https://github.com/lioryariv/idr
+# IDR指Implicit Differentiable Renderer，隐式可微渲染器
 class RenderingNetwork(nn.Module):
     def __init__(
         self,
@@ -80,6 +82,7 @@ class RenderingNetwork(nn.Module):
         self.encode_apperence = encode_apperence
         if self.encode_apperence:
             # -3 is to remove dir
+            # dim是 D+2 个维度的list：[in, hid*8, out]
             dims = (
                 [d_in + head_channels - 3]
                 + [d_hidden for _ in range(n_layers)]
@@ -90,17 +93,19 @@ class RenderingNetwork(nn.Module):
 
         self.embedview_fn = None
         if multires_view > 0:
-            embedview_fn, input_ch = get_embedder(multires_view)
+            embedview_fn, input_ch = get_embedder(multires_view)    # 对输入*2L position encoding后
             self.embedview_fn = embedview_fn
-            dims[0] += 0 if self.encode_apperence else (input_ch - 3)
+            dims[0] += 0 if self.encode_apperence else (input_ch - 3)   # appear之前处理过了，input_ch - 3相当于 +x*2L-x？
             in_channels_dir_a += input_ch
 
         self.num_layers = len(dims)
 
+        # 建立新layers个插值Linear层
         for l in range(0, self.num_layers - 1):
             out_dim = dims[l + 1]
             lin = nn.Linear(dims[l], out_dim)
 
+            # 权重归一化：一种权值再参数化(reparameterization)，加速训练
             if weight_norm:
                 lin = nn.utils.weight_norm(lin)
 
@@ -124,9 +129,10 @@ class RenderingNetwork(nn.Module):
                     head_channels, head_channels
                 )
                 static_encoding_od[f"static_relu_{s_layer_i}"] = nn.ReLU(True)
-            self.static_encoding = nn.Sequential(static_encoding_od)
+            self.static_encoding = nn.Sequential(static_encoding_od)    # 模块序列，按照顺序进行排列
             self.xyz_encoding_final = nn.Linear(d_feature, d_feature)
 
+    # 传播函数
     def forward(self, points, normals, view_dirs, feature_vectors, input_dir_a=None):
         if self.embedview_fn is not None:
             view_dirs = self.embedview_fn(view_dirs)
@@ -180,6 +186,7 @@ class SingleVarianceNetwork(nn.Module):
 
 
 # This implementation is borrowed from IDR: https://github.com/lioryariv/idr
+# 核心处理几何、表面相关的SDF Network
 class SDFNetwork(nn.Module):
     def __init__(
         self,
@@ -267,7 +274,7 @@ class SDFNetwork(nn.Module):
 
         x = inputs
         for l in range(0, self.num_layers - 1):
-            lin = getattr(self, "lin" + str(l))
+            lin = getattr(self, "lin" + str(l))     # getattr获取括号里的属性，应该是String
 
             if l in self.skip_in:
                 x = torch.cat([x, inputs], 1) / np.sqrt(2)

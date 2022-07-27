@@ -80,10 +80,10 @@ class NeuconWSystem(LightningModule):
 
         # define NEUCONW model
         self.neuconw = NeuconW(
-            sdfNet_config=self.config.NEUCONW.SDF_CONFIG,
-            colorNet_config=self.config.NEUCONW.COLOR_CONFIG,
-            SNet_config=self.config.NEUCONW.S_CONFIG,
-            in_channels_a=self.config.NEUCONW.N_A,
+            sdfNet_config=self.config.NEUCONW.SDF_CONFIG,       # 控制符号距离函数Net，相当于NeRFW中的\theta_1
+            colorNet_config=self.config.NEUCONW.COLOR_CONFIG,   # 控制颜色Net，相当于NeRFW中的\theta_2
+            SNet_config=self.config.NEUCONW.S_CONFIG,           # todo 第3个Net，用于？相当于NeRFW中的\theta_3
+            in_channels_a=self.config.NEUCONW.N_A,              # =48
             encode_a=self.config.NEUCONW.ENCODE_A,
         )
 

@@ -38,6 +38,7 @@ class Embedder:
         return torch.cat([fn(inputs) for fn in self.embed_fns], -1)
 
 
+# position encoding
 class PosEmbedding(nn.Module):
     def __init__(self, max_logscale, N_freqs, logscale=True):
         """
@@ -67,6 +68,7 @@ class PosEmbedding(nn.Module):
         return torch.cat(out, -1)
 
 
+# 与原版NeRF-pytorch一致
 def get_embedder(multires, input_dims=3):
     embed_kwargs = {
         'include_input': True,
@@ -83,6 +85,7 @@ def get_embedder(multires, input_dims=3):
 
 
 # This implementation is borrowed from nerf-pytorch: https://github.com/yenchenlin/nerf-pytorch
+# 与原版NeRF-pytorch基本一致，skips之后的都是新增参数
 class NeRF(nn.Module):
     def __init__(self,
                  D=8,
@@ -107,15 +110,17 @@ class NeRF(nn.Module):
         self.embed_fn = None
         self.embed_fn_view = None
 
-        self.encode_appearance = encode_appearance
-        self.in_channels_a = in_channels_a
-        self.in_channels_dir = in_channels_dir
+        self.encode_appearance = encode_appearance  # 是否加入appearance embedding
+        self.in_channels_a = in_channels_a          # 单层appearance所占神经元个数
+        self.in_channels_dir = in_channels_dir      # 单层direction所占神经元个数
 
+        # position encoding对X的倍乘数L
         if multires > 0:
             embed_fn, input_ch = get_embedder(multires, input_dims=d_in)
             self.embed_fn = embed_fn
             self.input_ch = input_ch
 
+        # position encoding对view d的倍乘数L
         if multires_view > 0:
             embed_fn_view, input_ch_view = get_embedder(multires_view, input_dims=d_in_view)
             self.embed_fn_view = embed_fn_view
@@ -128,6 +133,8 @@ class NeRF(nn.Module):
             [nn.Linear(self.input_ch, W)] +
             [nn.Linear(W, W) if i not in self.skips else nn.Linear(W + self.input_ch, W) for i in range(D - 1)])
 
+        # 若采用appearance embedding，对应的网络结构
+        # 此处应该指的是第一个MLP分了一半W用于app emb
         if self.encode_appearance:
             apperence_encoding = OrderedDict([
                 ('static_linear_0', nn.Linear(W + self.in_channels_dir + self.in_channels_a, W//2)),
