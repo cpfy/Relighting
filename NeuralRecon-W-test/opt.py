@@ -15,7 +15,7 @@ def get_opts():
                         help='number of training epochs')
     parser.add_argument('--num_gpus', type=int, default=1,
                         help='number of gpus')
-    parser.add_argument('--num_nodes', type=int, default=1,
+    parser.add_argument('--num_nodes', type=int, default=1,         # num_nodes与gpu数量相乘为world-size，默认为2？
                         help='number of nodes')
     parser.add_argument('--num_workers', type=int, default=4,       # 加载data的处理者
                         help='number of workers for data_loader')

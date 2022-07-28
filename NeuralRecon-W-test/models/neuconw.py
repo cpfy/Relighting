@@ -224,7 +224,7 @@ class SDFNetwork(nn.Module):
             else:
                 out_dim = dims[l + 1]
 
-            lin = nn.Linear(dims[l], out_dim)
+            lin = nn.Linear(dims[l], out_dim)   # 构建差分层接？
 
             if geometric_init:
                 if l == self.num_layers - 2:

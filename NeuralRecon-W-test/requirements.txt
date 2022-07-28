@@ -1,3 +1,16 @@
+
+# 此处少了torchvision、kaolin，且从mmcv来看torch需要1.11
+
+# 一系列补充的
+#torch==1.11.0
+#torchvision==0.12.0
+#torchtext==0.12.0		# 0.8.0不兼容报错undifined symbol，0.12.0废弃了torchtext.legacy？？
+#torchaudio==0.11.0
+
+# kaolin安装相关
+cython==0.29.20
+
+
 pytorch-lightning==1.4.8
 torchmetrics==0.7.0
 einops==0.3.0
@@ -33,6 +46,3 @@ open3d==0.12.0
 # mmsegmentation
 mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.11/index.html
 mmsegmentation
-
-
-# 此处少了torchvision、kaolin

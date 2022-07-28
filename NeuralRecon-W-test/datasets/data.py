@@ -38,7 +38,7 @@ class DataModule(pl.LightningDataModule):
 
     def setup(self, stage):
         try:
-            self.world_size = dist.get_world_size()
+            self.world_size = dist.get_world_size()     # 计算：worldsize=gpu*nodes
             assert self.world_size <= 64, "world size can't larger than 64"
             assert (
                 64 % self.world_size == 0

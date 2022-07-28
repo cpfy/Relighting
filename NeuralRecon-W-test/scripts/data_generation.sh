@@ -6,7 +6,12 @@ set -e
 now=$(date +"%Y%m%d_%H%M%S")
 echo "working directory is $(pwd)"
 jobname="data-generation-$1-$now"
-export CUDA_VISIBLE_DEVICES=5
+
+# 该环境变量来限制CUDA程序所能使用的GPU设备，从0号编号开始！根本没有5个gpu
+# export CUDA_VISIBLE_DEVICES=5
+
+export CUDA_VISIBLE_DEVICES=0
+
 # scenes=brandenburg_gate lincoln_memorial palacio_de_bellas_artes pantheon_exterior trevi_fountain
 dataset_name="phototourism"
 cache_dir="cache_sgs"

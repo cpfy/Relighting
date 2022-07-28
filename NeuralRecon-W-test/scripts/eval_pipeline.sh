@@ -4,10 +4,10 @@ now=$(date +"%Y%m%d_%H%M%S")
 jobname="eval-$now"
 
 #################################################
-# change these according to your machine status
-N_GPUS=4
-N_CPUS=4
-export CUDA_VISIBLE_DEVICES=0,2,5,6
+# change these according to your machine status[贫穷限制了我的想象力]
+N_GPUS=1  # default:4
+N_CPUS=0  # default:4
+export CUDA_VISIBLE_DEVICES=0   # default:0,2,5,6
 ##################################################
 
 scene_name=$1

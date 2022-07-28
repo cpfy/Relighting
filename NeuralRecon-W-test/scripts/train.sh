@@ -12,7 +12,11 @@ mkdir -p log
 mkdir -p logs/${jobname}
 cp ${config_file} logs/${jobname}
 
-export CUDA_VISIBLE_DEVICES=5
+# 该环境变量来限制CUDA程序所能使用的GPU设备，从0号编号开始！根本没有5个gpu
+# export CUDA_VISIBLE_DEVICES=5
+
+export CUDA_VISIBLE_DEVICES=0
+
 python train.py --cfg_path ${config_file} \
   --num_gpus $3 --num_nodes $4 \
   --num_epochs 20 --batch_size 2048 --test_batch_size 512 --num_workers 16 \
