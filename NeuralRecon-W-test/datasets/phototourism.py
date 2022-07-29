@@ -338,6 +338,7 @@ class PhototourismDataset(Dataset):
             #     self.image_paths = pickle.load(f)
             pass
         else:
+            # 读取dense/sparse/images.bin的稀疏BG图像数据？
             print("Reading images.bin..")
             imdata = read_images_binary(
                 os.path.join(self.root_dir, f"dense/{self.sfm_path}/images.bin")
@@ -361,6 +362,7 @@ class PhototourismDataset(Dataset):
             #     self.Ks = pickle.load(f)
             pass
         else:
+            # 读取dense/sparse/cameras.bin的相机焦距、偏移等数据
             self.Ks = {}  # {id: K}
             print("Reading cameras.bin..")
             camdata = read_cameras_binary(
@@ -369,6 +371,8 @@ class PhototourismDataset(Dataset):
             for id_ in self.img_ids:
                 K = np.zeros((3, 3), dtype=np.float32)
                 cam = camdata[imdata[id_].camera_id]
+
+                # 针孔相机
                 if cam.model == "PINHOLE":
                     img_w, img_h = int(cam.params[2] * 2), int(cam.params[3] * 2)
                     img_w_, img_h_ = (
@@ -380,6 +384,8 @@ class PhototourismDataset(Dataset):
                     K[0, 2] = cam.params[2] * img_w_ / img_w  # cx
                     K[1, 2] = cam.params[3] * img_h_ / img_h  # cy
                     K[2, 2] = 1
+
+                # 放射相机？
                 elif cam.model == "SIMPLE_RADIAL":
                     img_w, img_h = int(cam.params[1] * 2), int(cam.params[2] * 2)
                     img_w_, img_h_ = (
@@ -400,6 +406,7 @@ class PhototourismDataset(Dataset):
             # self.poses = np.load(os.path.join(self.root_dir, 'cache/poses.npy'))
             pass
         else:
+            # 计算camera-to-world的映射
             print("Compute c2w poses..")
             w2c_mats = []
             bottom = np.array([0, 0, 0, 1.0]).reshape(1, 4)
@@ -422,6 +429,7 @@ class PhototourismDataset(Dataset):
             #     self.fars = pickle.load(f)
             pass
         else:
+            # 读取dense/sparse/points3D.bin的3D点云数据
             pts3d = read_points3d_binary(
                 os.path.join(self.root_dir, f"dense/{self.sfm_path}/points3D.bin")
             )
@@ -520,6 +528,7 @@ class PhototourismDataset(Dataset):
                     self.all_rays = torch.cat(self.all_rays, 0)
                     self.all_rgbs = torch.cat(self.all_rgbs, 0)
             else:
+                # 生成光线与rgbs并放在缓存
                 print("Generating rays and rgbs..")
                 self.all_rays = []
                 self.all_rgbs = []

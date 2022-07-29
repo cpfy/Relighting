@@ -7,6 +7,7 @@ import numpy as np
 import os
 
 
+# [Colab]LightningDataModule一直报错。（更新：pl装1.4.8版本就成了！）
 class DataModule(pl.LightningDataModule):
     """
     For distributed training, each training process is assigned
