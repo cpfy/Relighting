@@ -110,6 +110,8 @@ class NeuconWSystem(LightningModule):
             "recontruct_path": self.config.DATASET.ROOT_DIR,
             "min_track_length": self.scene_config["min_track_length"],
         }
+
+        # renderer.py渲染器，参数基本来源于config.NEUCONW
         self.renderer = NeuconWRenderer(
             nerf=self.nerf,
             neuconw=self.neuconw,
@@ -146,12 +148,16 @@ class NeuconWSystem(LightningModule):
                 self.config.NEUCONW.TRAIN_VOXEL_SIZE, self.scene_config["eval_bbx"]
             )
 
+    # 传递给renderer的参数 [本文件仅line 171一处用到]
+    # "cos_anneal_ratio" grows from 0 to 1 in the beginning training iterations. The anneal strategy below makes
+    # the cos value "not dead" at the beginning training iterations, for better convergence.
     def get_cos_anneal_ratio(self):
         if self.anneal_end == 0.0:
             return 1.0
         else:
             return np.min([1.0, self.global_step / self.anneal_end])
 
+    # 获取、干涉Lightning_Model的logger显示内容
     def get_progress_bar_dict(self):
         items = super().get_progress_bar_dict()
         items.pop("v_num", None)
@@ -184,6 +190,7 @@ class NeuconWSystem(LightningModule):
         else:
             return [self.optimizer], [scheduler]
 
+    # 表面选取
     def surface_selection(self, train_level, threshold, device=0, chunk=65536):
         scene_origin_sfm = (self.renderer.origin).float().cpu()
         scene_radius_sfm = self.renderer.radius
@@ -193,7 +200,7 @@ class NeuconWSystem(LightningModule):
             self.renderer.octree_data = self.renderer.get_octree(device)
         octree_data = self.renderer.octree_data
 
-        # unpack octree
+        # unpack octree (从renderer -> generate_voxel获取)
         octree = octree_data["octree"]
         octree_origin = octree_data["scene_origin"].float().cpu()
         octree_scale = octree_data["scale"]

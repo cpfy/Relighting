@@ -162,3 +162,7 @@ hybrid提升准确度；一些优化加速方案
 > https://developer.nvidia.com/zh-cn/blog/new-nvidia-kaolin-library-release-streamlines-3d-deep-learning-research-workflows/
 >
 > https://zhuanlan.zhihu.com/p/91988486
+
+[5] 八叉树octree
+
+> https://www.zhihu.com/question/25111128

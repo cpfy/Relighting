@@ -91,8 +91,9 @@ class PhototourismDataset(Dataset):
             depth_percent = 0.4
         elif scene_name in ['lincoln_memorial', 'pantheon_exterior']:
             depth_percent = 0.0
-        
-        self.depth_percent = depth_percent  # 也许和不同数据集特性有关
+
+        # sfm深度填充比例？和不同数据集特性有关
+        self.depth_percent = depth_percent
         
         print(f"reading sfm result from {self.sfm_path}...")
 
@@ -319,6 +320,8 @@ class PhototourismDataset(Dataset):
             valid_mask.squeeze(),
         )
 
+    # tsv读取 + train/test划分
+    # use_cache的情况下全部不用处理，cache里已经搞好了
     def read_meta(self):
         # self.vis_sphere()
         # read all files in the tsv first (split to train and test later)
@@ -671,11 +674,21 @@ class PhototourismDataset(Dataset):
                         img = img[valid_mask]
                         rays = rays[valid_mask]
 
+                    # 此处的函数输出在 data_generation.sh 运行时多次出现
+                    # rays是[ray_o, ray_d,...,depth,weight]等一大串拼起来
                     if self.depth_percent > 0:
                         valid_depth = rays[:, -2] > 0
-                        valid_num = torch.sum(valid_depth).long().item()
+                        valid_num = torch.sum(valid_depth).long().item()    # torch.Tensor.item(): 返回单个元素张量的值
                         current_len = rays.size()[0]
-                        curent_percent = valid_num / current_len
+
+                        # 原写法除0报错: curent_percent = valid_num / current_len
+                        if current_len == 0:
+                            curent_percent = 2.22222
+                        else:
+                            curent_percent = valid_num / current_len    # 运行时有一个ZeroDivision报错
+
+                        # 例如，对BG：pad_len = (0.2*len-?)/0.8
+                        # 一般是个5w-15w之间的数
                         padding_length = int(np.ceil((self.depth_percent * current_len - valid_num) / (1 - self.depth_percent)))
                         print(f"padding valid depth percentage: from {curent_percent} to {self.depth_percent} with padding {padding_length}")
 
@@ -690,7 +703,12 @@ class PhototourismDataset(Dataset):
                         img = torch.cat([img, paddings_rgbs], dim=0)[result_ind]
 
                         test_ind =  torch.floor((torch.rand(1024) * result_length)).long()
-                        print(f"sample depth percent after padding: {torch.sum(rays[test_ind, -2] > 0) / rays[test_ind].size()[0]}")
+
+                        # 原写法除0报错: print(f"sample depth percent after padding: {torch.sum(rays[test_ind, -2] > 0) / rays[test_ind].size()[0]}")
+                        if current_len == 0 or rays[test_ind].size()[0] == 0:
+                            print("Onr Zero Division.")
+                        else:
+                            print(f"sample depth percent after padding: {torch.sum(rays[test_ind, -2] > 0) / rays[test_ind].size()[0]}")
 
                     self.all_rgbs += [img]
                     self.all_rays += [rays]

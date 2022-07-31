@@ -73,6 +73,7 @@ Successfully installed PyYAML-6.0 aiobotocore-2.1.2 aioitertools-0.10.0 anyio-3.
 
 【pip安装pytorch-lightning==1.4.8后的报错】
 
+```
 ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
 
 lightning 2022.7.18 requires tensorboard>=2.9.1, but you have tensorboard 2.8.0 which is incompatible.
@@ -81,6 +82,7 @@ Successfully installed future-0.18.2 pyDeprecate-0.3.1 pytorch-lightning-1.4.8
 WARNING: The following packages were previously imported in this runtime:
   [deprecate,pytorch_lightning]
 You must restart the runtime in order to use newly installed versions.
+```
 
 
 
@@ -100,6 +102,8 @@ if _TORCHTEXT_AVAILABLE:
 
 
 
+`git clone` 安装可补充大量额外包
+
 
 
 **报错：**ImportError: cannot import name '_package_available' from 'pytorch_lightning.utilities.imports' (/usr/local/lib/python3.7/dist-packages/pytorch_lightning/utilities/imports.py)
@@ -109,6 +113,20 @@ pip install pytorch_lightning 到1.6.5版本就会这样。。。
 
 
 md，到1.4.8版本就不报错了
+
+
+
+**报错：**from torchtext.legacy.data import Batch ModuleNotFoundError: No module named 'torchtext.legacy'
+
+（07.31更新：又遇到这个问题，且降pl版本仍报错）
+
+
+
+
+
+pip安装+clone安装+两个包降版本（clone后打印出的版本为1.7.0rc1）
+
+**报错：**ImportError: cannot import name 'TestTubeLogger' from 'pytorch_lightning.loggers' (/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loggers/\_\_init\_\_.py)
 
 
 
@@ -124,12 +142,11 @@ md，到1.4.8版本就不报错了
 !pip install loguru
 !pip install torch_optimizer
 !pip install trimesh==3.9.1
-!pip install kaolin
+#!pip install kaolin
 !pip install cython==0.29.20
 !pip install lpips==0.1.3
 !pip install torchmetrics==0.7.0
 !pip install yacs
 !pip install test-tube==0.7.5
-
 !pip install tornado==5.1.0		# offset kaolin's influence
 ```

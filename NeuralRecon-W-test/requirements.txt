@@ -1,5 +1,5 @@
 
-# 此处少了torchvision、kaolin，且从mmcv来看torch需要1.11
+# 此处少了torchvision、kaolin，且从mmcv来看torch需要1.11（可不用）
 # kaolin [6]
 
 # 一系列补充的
