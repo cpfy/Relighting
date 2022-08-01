@@ -132,6 +132,8 @@ pip安装+clone安装+两个包降版本（clone后打印出的版本为1.7.0rc1
 
 #### Happy End
 
+> 仅data_generation
+
 泪目，Generating rays and rgbs总算跑起来了
 
 为实现此步，共需安装以下10个包
@@ -150,3 +152,48 @@ pip安装+clone安装+两个包降版本（clone后打印出的版本为1.7.0rc1
 !pip install test-tube==0.7.5
 !pip install tornado==5.1.0		# offset kaolin's influence
 ```
+
+
+
+#### test_tube问题
+
+**报错：**找不到TestTubeLogger
+
+```
+Traceback (most recent call last):
+  File "train.py", line 12, in <module>
+    from pytorch_lightning.loggers import TestTubeLogger
+ImportError: cannot import name 'TestTubeLogger' from 'pytorch_lightning.loggers' (/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loggers/__init__.py)
+```
+
+问题在于1.4.8有，但新的1.7.0rc1版本的 `pytorch_lightning/loggers/__init__.py` 中移除了这个：
+
+```
+if _TESTTUBE_AVAILABLE:
+    __all__.append("TestTubeLogger")
+```
+
+
+
+【解决】
+
+自己fork并粘贴1.4.8 TestTube部分修改了一遍：https://github.com/cpfy/lightning
+
+
+
+#### pl参数报错
+
+**报错：**错误参数progress_bar_refresh_rate
+
+```
+Traceback (most recent call last):
+  File "train.py", line 79, in <module>
+    main(hparams, config)
+  File "train.py", line 68, in main
+    gradient_clip_val=0.99
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/utilities/argparse.py", line 345, in insert_env_defaults
+    return fn(self, **kwargs)
+TypeError: __init__() got an unexpected keyword argument 'progress_bar_refresh_rate'
+```
+
+参见pl文档说明：https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html

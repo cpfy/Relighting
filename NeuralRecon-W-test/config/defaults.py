@@ -81,7 +81,8 @@ _CN.NEUCONW.LOSS.floor_weight = 0.01
 
 ##############  Dataset  ##############
 _CN.DATASET = CN()
-_CN.DATASET.ROOT_DIR = None
+#_CN.DATASET.ROOT_DIR = None
+_CN.DATASET.ROOT_DIR = './'
 _CN.DATASET.DATASET_NAME = None
 _CN.DATASET.SPLIT = 'train'
 

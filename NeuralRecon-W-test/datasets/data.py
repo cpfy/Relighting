@@ -18,7 +18,7 @@ class DataModule(pl.LightningDataModule):
         super().__init__()
         self.args = args
         self.config = config
-        self.dataset_config = config.DATASET
+        self.dataset_config = config.DATASET    # config/defaults.py中参数
         self.specific_dataset_config = getattr(
             self.dataset_config, self.dataset_config.DATASET_NAME.upper()
         )
@@ -37,6 +37,7 @@ class DataModule(pl.LightningDataModule):
             "pin_memory": getattr(args, "pin_memory", True),
         }
 
+    # 已Override父类启动模块
     def setup(self, stage):
         try:
             self.world_size = dist.get_world_size()     # 计算：worldsize=gpu*nodes
@@ -52,6 +53,8 @@ class DataModule(pl.LightningDataModule):
             logger.warning(str(re) + " (set world_size=1 and rank=0)")
 
         dataset = dataset_dict[self.dataset_config.DATASET_NAME]
+
+        # keyword参数含义
         kwargs = {
             "root_dir": self.dataset_config.ROOT_DIR,
             "img_downscale": self.specific_dataset_config.IMG_DOWNSCALE,
@@ -62,7 +65,7 @@ class DataModule(pl.LightningDataModule):
                 "semantic_map_path"
             ] = self.dataset_config.PHOTOTOURISM.SEMANTIC_MAP_PATH
             kwargs["with_semantics"] = self.dataset_config.PHOTOTOURISM.WITH_SEMANTICS
-        print("Initializing data loaders...")
+        print("Initializing data loaders...")       # <08.01> 此步在ipynb成功执行
 
         if self.specific_dataset_config.USE_CACHE:
             if self.specific_dataset_config.IMG_DOWNSCALE == 1:
@@ -100,11 +103,29 @@ class DataModule(pl.LightningDataModule):
 
         return local_items
 
+    # 初始化数据集
     def _setup_dataset(self, dataset, split, **kwargs):
-        split_path = os.path.join(self.specific_dataset_config.CACHE_DIR, "splits")
-        splits_names = next(
-            os.walk(os.path.join(self.dataset_config.ROOT_DIR, split_path))
-        )[1]
+        # join将目录和文件名合成一个路径
+        split_path = os.path.join(self.specific_dataset_config.CACHE_DIR, "splits") # .CACHE_DIR = 'cache'
+
+        # <defaults.py> _CN.DATASET.ROOT_DIR = None
+        # os.walk返回某文件夹下所有的子目录和文件：dirpath, dirnames, filenames；后两个list、generator类型
+
+        # Colab执行结果均为注释
+        print("##### OS PATH TEST #####")
+        print(os.path)  # <module 'posixpath' from '/usr/lib/python3.7/posixpath.py'>
+        print(self.dataset_config.ROOT_DIR) # data/heritage-recon/brandenburg_gate
+        print(split_path)   # cache_sgs/splits
+        print(os.path.join(self.dataset_config.ROOT_DIR, "split"))  # data/heritage-recon/brandenburg_gate/split
+        print(type(os.walk("split")))   # <class 'generator'>
+
+        # splits_names = next(
+        #     # 导致StopIteration报错，据说for loop结束next后无结果导致
+        #     os.walk(os.path.join(self.dataset_config.ROOT_DIR, split_path))
+        # )[1]
+
+        splits_names = "standard_split_name: STD_NAME"
+
         local_splits_names = self._get_local_split(
             splits_names, self.world_size, self.rank
         )

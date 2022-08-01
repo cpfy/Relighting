@@ -166,3 +166,7 @@ hybrid提升准确度；一些优化加速方案
 [5] 八叉树octree
 
 > https://www.zhihu.com/question/25111128
+
+[6] datasets/data.py 下 os.walk() 函数
+
+> https://zhuanlan.zhihu.com/p/149824829

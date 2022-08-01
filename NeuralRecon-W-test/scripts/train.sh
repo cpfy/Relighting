@@ -17,6 +17,7 @@ cp ${config_file} logs/${jobname}
 
 export CUDA_VISIBLE_DEVICES=0
 
+# <核心>: 运行train.py脚本
 python train.py --cfg_path ${config_file} \
   --num_gpus $3 --num_nodes $4 \
   --num_epochs 20 --batch_size 2048 --test_batch_size 512 --num_workers 16 \
