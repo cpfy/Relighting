@@ -119,6 +119,8 @@ class DataModule(pl.LightningDataModule):
         print(os.path.join(self.dataset_config.ROOT_DIR, "split"))  # data/heritage-recon/brandenburg_gate/split
         print(type(os.walk("split")))   # <class 'generator'>
 
+        # <推测>: 此处可能因为未完成data generation，并产生相应文件夹与路径
+        # 参见：https://github.com/zju3dv/NeuralRecon-W/issues/11。由于cache missing
         # splits_names = next(
         #     # 导致StopIteration报错，据说for loop结束next后无结果导致
         #     os.walk(os.path.join(self.dataset_config.ROOT_DIR, split_path))

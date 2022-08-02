@@ -81,14 +81,16 @@ _CN.NEUCONW.LOSS.floor_weight = 0.01
 
 ##############  Dataset  ##############
 _CN.DATASET = CN()
-#_CN.DATASET.ROOT_DIR = None
-_CN.DATASET.ROOT_DIR = './'
+_CN.DATASET.ROOT_DIR = None
+# _CN.DATASET.ROOT_DIR = './'   # 无影响，后面会覆盖
 _CN.DATASET.DATASET_NAME = None
 _CN.DATASET.SPLIT = 'train'
 
 
 _CN.DATASET.PHOTOTOURISM = CN()
-_CN.DATASET.PHOTOTOURISM.IMG_DOWNSCALE = 1  # how much to downscale the images for phototourism dataset
+
+# 改这个参数好像对爆RAM没用？？？奇怪
+_CN.DATASET.PHOTOTOURISM.IMG_DOWNSCALE = 3  # how much to downscale the images for phototourism dataset
 _CN.DATASET.PHOTOTOURISM.USE_CACHE = True  # whether to use ray cache (make sure img_downscale is the same)
 _CN.DATASET.PHOTOTOURISM.CACHE_DIR = 'cache'
 _CN.DATASET.PHOTOTOURISM.CACHE_TYPE = 'npz'

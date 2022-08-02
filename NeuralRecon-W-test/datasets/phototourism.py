@@ -554,6 +554,7 @@ class PhototourismDataset(Dataset):
                 self.sfm_octree = self.get_octree(device=0, expand=1, radius=1)
                 self.expand_octree = self.get_octree(device=0, expand=2, radius=1.5)
 
+                # 此处打开1300+个照片，所谓use_cache。RAM也是被这个b搞爆的
                 for id_ in tqdm(img_ids_split):
                     c2w = torch.FloatTensor(self.poses_dict[id_])
 

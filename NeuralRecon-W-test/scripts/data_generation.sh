@@ -12,6 +12,7 @@ jobname="data-generation-$1-$now"
 
 export CUDA_VISIBLE_DEVICES=0
 
+# 为4个场景生成cache，目录为cache_sgs/
 # scenes=brandenburg_gate lincoln_memorial palacio_de_bellas_artes pantheon_exterior trevi_fountain
 dataset_name="phototourism"
 cache_dir="cache_sgs"

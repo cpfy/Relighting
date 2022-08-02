@@ -197,3 +197,71 @@ TypeError: __init__() got an unexpected keyword argument 'progress_bar_refresh_r
 ```
 
 参见pl文档说明：https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html
+
+
+
+### Data Generation
+
+#### brandenburg_gate
+
+624 10.68G
+
+670 11.28G
+
+750 暴涨 24.45G
+
+Killed就是因为RAM搞爆了
+
+```
+56%|█████▌    | 751/1353 [03:01<04:46,  2.10it/s]padding valid depth percentage: from 0.0017757798791290043 to 0.2 with padding 117627
+sample depth percent after padding: 0.197265625
+
+100%|██████████| 8/8 [00:00<00:00, 286.45it/s]Killed
+```
+
+
+
+大概升级也没用，52GB肯定也不够
+
+据说换TPU能从25G -> 35G
+
+![enter image description here](https://i.stack.imgur.com/kjNZm.png)
+
+
+
+
+
+#### lincoln_memorial
+
+
+
+#### palacio_de_bellas_artes
+
+目前仅在palacio_de_bellas_artes场景发现
+
+**报错：**索引越界
+
+```
+Traceback (most recent call last):
+  File "tools/prepare_data/prepare_data_cache.py", line 176, in <module>
+    dataset = dataset_dict[args.dataset_name](**kwargs)
+  File "./datasets/phototourism.py", line 125, in __init__
+    self.read_meta()
+  File "./datasets/phototourism.py", line 696, in read_meta
+    paddings_rays = rays[valid_depth, :][pad_ind]
+IndexError: index is out of bounds for dimension with size 0
+```
+
+
+
+#### pantheon_exterior
+
+占满RAM爆炸了
+
+```
+ 46%|████▌     | 640/1391 [06:40<08:27,  1.48it/s]
+  0%|          | 0/9 [00:00<?, ?it/s]
+100%|██████████| 9/9 [00:00<00:00, 77.16it/s]tee: log/data-generation-data/heritage-recon/pantheon_exterior-20220802_062611.logKilled
+: Transport endpoint is not connected
+```
+

@@ -73,7 +73,8 @@ DATASET:
 
   PHOTOTOURISM:
     IMG_DOWNSCALE: 1
-    USE_CACHE: True
+     USE_CACHE: True   # RAM爆炸，尝试不用
+#    USE_CACHE: False    # 毫无用处，只是train时额外重复一遍data_generation
     CACHE_DIR: 'cache_sgs'
 
 TRAINER:
