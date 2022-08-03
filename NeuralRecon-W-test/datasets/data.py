@@ -82,6 +82,8 @@ class DataModule(pl.LightningDataModule):
         else:
             self.train_dataset = dataset(split="train", use_cache=False, **kwargs)
         self.val_dataset = dataset(split="val", use_cache=False, **kwargs)
+
+        # [输出]完成data读取
         print("Dataloader init finished!")
 
     def _get_local_split(self, items: list, world_size: int, rank: int, seed: int = 6):

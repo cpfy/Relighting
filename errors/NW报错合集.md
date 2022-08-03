@@ -138,6 +138,8 @@ pip安装+clone安装+两个包降版本（clone后打印出的版本为1.7.0rc1
 
 为实现此步，共需安装以下10个包
 
+##### 一键安装
+
 ```
 !pip install open3d==0.12.0
 !pip install kornia==0.4.1
@@ -178,6 +180,8 @@ if _TESTTUBE_AVAILABLE:
 【解决】
 
 自己fork并粘贴1.4.8 TestTube部分修改了一遍：https://github.com/cpfy/lightning
+
+（08.03更新：换成新的branch——v1.4.8_origin才可）
 
 
 
@@ -263,5 +267,74 @@ IndexError: index is out of bounds for dimension with size 0
   0%|          | 0/9 [00:00<?, ?it/s]
 100%|██████████| 9/9 [00:00<00:00, 77.16it/s]tee: log/data-generation-data/heritage-recon/pantheon_exterior-20220802_062611.logKilled
 : Transport endpoint is not connected
+```
+
+
+
+### RAM
+
+经测试，BG在取 downscale=5 最终处理完全部1353点，占用4.50G
+
+
+
+
+
+### 训练
+
+运行脚本train.sh时
+
+**报错：**RuntimeError: torch.cat(): expected a non-empty list of Tensors
+
+（无关紧要，刷新就好了）
+
+
+
+
+
+#### lightning遗留问题
+
+应该是torch_lightning没改干净，重新修改fork分支
+
+```
+Traceback (most recent call last):
+  File "train.py", line 81, in <module>
+    main(hparams, config)
+  File "train.py", line 73, in main
+    trainer.fit(system, datamodule=data_module)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 706, in fit
+    self._fit_impl, model, train_dataloaders, val_dataloaders, datamodule, ckpt_path
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 659, in _call_and_handle_interrupt
+    return trainer_fn(*args, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 746, in _fit_impl
+    results = self._run(model, ckpt_path=self.ckpt_path)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 1159, in _run
+    self._log_hyperparams()
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 1227, in _log_hyperparams
+    logger.log_hyperparams(hparams_initial)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/utilities/rank_zero.py", line 32, in wrapped_fn
+    return fn(*args, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loggers/test_tube.py", line 147, in log_hyperparams
+    params = self._convert_params(params)
+AttributeError: 'TestTubeLogger' object has no attribute '_convert_params'
+```
+
+
+
+#### 文件夹重复？
+
+```
+Traceback (most recent call last):
+  File "tools/prepare_data/prepare_data_cache.py", line 215, in <module>
+    rgbs, all_lengths, chunk_length, split_path, args, padding_index, "rgbs"
+  File "tools/prepare_data/prepare_data_cache.py", line 152, in split_to_chunks
+    chunks=True,
+  File "/usr/local/lib/python3.7/dist-packages/h5py/_hl/group.py", line 148, in create_dataset
+    dsid = dataset.make_new_dset(group, shape, dtype, data, name, **kwds)
+  File "/usr/local/lib/python3.7/dist-packages/h5py/_hl/dataset.py", line 137, in make_new_dset
+    dset_id = h5d.create(parent.id, name, tid, sid, dcpl=dcpl)
+  File "h5py/_objects.pyx", line 54, in h5py._objects.with_phil.wrapper
+  File "h5py/_objects.pyx", line 55, in h5py._objects.with_phil.wrapper
+  File "h5py/h5d.pyx", line 87, in h5py.h5d.create
+ValueError: Unable to create dataset (name already exists)
 ```
 

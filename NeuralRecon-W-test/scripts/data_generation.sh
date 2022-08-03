@@ -25,10 +25,14 @@ if [ ! -f $root_dir/*.tsv ]; then
     --num_test 10 \
     --min_observation $min_observation --roi_threshold 0 --static_threshold 0
 fi
+#xs, fi标明if结束、还有类似的(case,esac)对
+
+# 这里的参数好像覆盖了defaults.py中的？
+# [测试]增大到downscale=2是否会减小内存占用。（好像仍然在同一个地方RAM爆炸）
 python tools/prepare_data/prepare_data_cache.py \
 --root_dir $root_dir \
 --dataset_name $dataset_name --cache_dir $cache_dir \
---img_downscale 1 \
+--img_downscale 5 \
 --semantic_map_path semantic_maps --split_to_chunks 64 \
 2>&1|tee log/${jobname}.log
 

@@ -63,7 +63,7 @@ class PhototourismDataset(Dataset):
         """
         self.split_path = split_path
         self.root_dir = root_dir
-        self.split = split  # [指用途区分]共分train、eval、test_train、val、test五类
+        self.split = split  # [指用途区分]某一个数据被分到train、eval、test_train、val、test五个中哪一类
 
         # 图像W、H降低规模的倍率，原始d=1在BG上将消耗40G内存？！
         assert (
@@ -80,22 +80,25 @@ class PhototourismDataset(Dataset):
 
         self.scene_origin = scene_origin
         self.scene_radius = scene_radius
-
-        self.sfm_path = sfm_path        # 3Ddianyun
         
         # hard code sfm depth padding
         scene_name = self.root_dir.rsplit('/')[-1]
         if scene_name == 'brandenburg_gate':
+            sfm_path = '../neuralsfm'
             depth_percent = 0.2
         elif scene_name == 'palacio_de_bellas_artes':
+            sfm_path = '../neuralsfm'
             depth_percent = 0.4
         elif scene_name in ['lincoln_memorial', 'pantheon_exterior']:
             depth_percent = 0.0
 
         # sfm深度填充比例？和不同数据集特性有关
         self.depth_percent = depth_percent
+
+        # 3D点云
+        self.sfm_path = sfm_path
         
-        print(f"reading sfm result from {self.sfm_path}...")
+        print(f"reading sfm result from {self.sfm_path}...")    # [输出]尝试读取sfm数据
 
         # Setup cache
         self.use_cache = use_cache
@@ -240,6 +243,7 @@ class PhototourismDataset(Dataset):
         return octree_data
 
     # 计算光线的最近、最远相交voxel
+    # 调用generate_voxel中的get_near_far函数
     def near_far_voxel(self, octree_data, rays_o, rays_d, image_name, chunk_size=65536):
         """generate near for from intersection with sparse voxel.
            Input and output are in sfm coordinate system
@@ -278,13 +282,19 @@ class PhototourismDataset(Dataset):
         octree_scale = octree_data["scale"]
         octree_level = octree_data["level"]
 
+        # 推测是这里两个list导致RAM爆炸
         voxel_near_sfm_all = []
         voxel_far_sfm_all = []
 
         # todo: figure out why chunck size greater or equal than 1768500 will result in error intersection
         # use 1000000 as a threshold just to be safe
+        # [测试]原为10w，看下5w会发生什么，RAM占用率如何变化。（无变化，这里应该只是分块大小不同，总量没变）
         chunk_size = min(rays_o.size()[0], 100000)
         try:
+
+            # print(f"chunk_size={chunk_size}")               # 固定=100000
+            # print(f"rays_o.size()[0]={rays_o.size()[0]}")   # 震惊，是60w-80w中的一个随机数
+
             for i in tqdm(range(0, rays_o.size()[0], chunk_size)):
                 # generate near far from spc
                 voxel_near_sfm, voxel_far_sfm = get_near_far(
@@ -465,7 +475,7 @@ class PhototourismDataset(Dataset):
         if not self.use_cache:
             self.poses_dict = {id_: self.poses[i] for i, id_ in enumerate(self.img_ids)}
 
-            # Step 5. split the img_ids (the number of images is verfied to match that in the paper)
+            # Step 5. split the img_ids (the number of images is verified to match that in the paper)
             # training will use all images
             self.img_ids_train = [
                 id_
@@ -495,6 +505,8 @@ class PhototourismDataset(Dataset):
                         self.root_dir, self.split_path, self.cache_paths[0]
                     )
                     cache_type = os.listdir(example_split_path)[0].split(".")[-1]
+
+                    # 从cache加载数据
                     for cache_path in self.cache_paths:
                         print(f"Loading cached rays from {cache_path}..")
                         rays_file = os.path.join(
@@ -679,6 +691,9 @@ class PhototourismDataset(Dataset):
                     # rays是[ray_o, ray_d,...,depth,weight]等一大串拼起来
                     if self.depth_percent > 0:
                         valid_depth = rays[:, -2] > 0
+                        if not valid_depth.any():   # [Solve]官方的除0报错解决方案
+                            continue
+
                         valid_num = torch.sum(valid_depth).long().item()    # torch.Tensor.item(): 返回单个元素张量的值
                         current_len = rays.size()[0]
 
@@ -686,17 +701,20 @@ class PhototourismDataset(Dataset):
                         if current_len == 0:
                             curent_percent = 2.22222
                         else:
-                            curent_percent = valid_num / current_len    # 运行时有一个ZeroDivision报错
+                            curent_percent = valid_num / current_len    # [报错]运行时有一个ZeroDivision报错
 
                         # 例如，对BG：pad_len = (0.2*len-?)/0.8
                         # 一般是个5w-15w之间的数
                         padding_length = int(np.ceil((self.depth_percent * current_len - valid_num) / (1 - self.depth_percent)))
                         print(f"padding valid depth percentage: from {curent_percent} to {self.depth_percent} with padding {padding_length}")
 
-                        pad_ind =  torch.floor((torch.rand(padding_length) * valid_num)).long()
+                        pad_ind = torch.floor((torch.rand(padding_length) * valid_num)).long()
                         result_length = padding_length + current_len
                         result_ind = torch.randperm(result_length)
 
+                        # [报错] 增大downscale会出现index越界问题
+                        # 官方解释：https://github.com/zju3dv/NeuralRecon-W/issues/13
+                        # The problem seems to be there is no SfM key point exists in that image. The latest code has fixed this issue.
                         paddings_rays = rays[valid_depth, :][pad_ind]
                         rays = torch.cat([rays, paddings_rays], dim=0)[result_ind]
 
@@ -705,7 +723,7 @@ class PhototourismDataset(Dataset):
 
                         test_ind =  torch.floor((torch.rand(1024) * result_length)).long()
 
-                        # 原写法除0报错: print(f"sample depth percent after padding: {torch.sum(rays[test_ind, -2] > 0) / rays[test_ind].size()[0]}")
+                        # [报错]原写法除0报错: print(f"sample depth percent after padding: {torch.sum(rays[test_ind, -2] > 0) / rays[test_ind].size()[0]}")
                         if current_len == 0 or rays[test_ind].size()[0] == 0:
                             print("Onr Zero Division.")
                         else:

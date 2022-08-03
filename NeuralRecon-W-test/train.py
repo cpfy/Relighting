@@ -57,12 +57,16 @@ def main(hparams, config):
                       resume_from_checkpoint=hparams.ckpt_path,
                       logger=logger,
                       weights_summary=None,
-                      # progress_bar_refresh_rate=hparams.refresh_every,     此用法在pytorch_lightning已废弃(progress bar的刷新频率)
+                      progress_bar_refresh_rate=hparams.refresh_every,     #此用法在pytorch_lightning已废弃(progress bar的刷新频率)
                       # Passing training strategies (e.g., "ddp") to accelerator has been deprecated in v1.5.0 and will be removed in v1.7.0. Please use the strategy argument instead.
+
                       gpus=hparams.num_gpus,
                       num_nodes=hparams.num_nodes,
-                      # accelerator='ddp' if hparams.num_gpus>1 else None,    # 废弃，用strategy替代
-                      strategy='ddp' if hparams.num_gpus > 1 else None,
+
+                      # （08.03更新）由于lightning又换回1.4.8版本，仍使用accelerator，上面rate同
+                      accelerator='ddp' if hparams.num_gpus>1 else None,    # 废弃，用strategy替代
+                      # strategy='ddp' if hparams.num_gpus > 1 else None,
+
                       num_sanity_val_steps=1,
                       val_check_interval=config.TRAINER.VAL_FREQ,
                       benchmark=True,
