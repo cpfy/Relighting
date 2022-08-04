@@ -170,3 +170,7 @@ hybrid提升准确度；一些优化加速方案
 [6] datasets/data.py 下 os.walk() 函数
 
 > https://zhuanlan.zhihu.com/p/149824829
+
+[7] num_workers、batch_size等参数设置
+
+> https://blog.csdn.net/qq_24407657/article/details/103992170
