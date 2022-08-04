@@ -72,19 +72,22 @@ DATASET:
   SPLIT: 'train'
 
   PHOTOTOURISM:
-    IMG_DOWNSCALE: 4
+    IMG_DOWNSCALE: 15
 #    USE_CACHE: True   # RAM爆炸，尝试不用
     USE_CACHE: False    # 毫无用处，只是train时额外重复一遍data_generation
     CACHE_DIR: 'cache_sgs'
 
 TRAINER:
-  CANONICAL_BS: 4096
-  CANONICAL_LR: 1e-4
+  CANONICAL_BS: 4096  # Batch Size, defaults = 4096
+  CANONICAL_LR: 1e-4  # Learning Rate
 
   OPTIMIZER: "adam" 
   WEIGHT_DECAY: 0 
 
   LR_SCHEDULER: 'none'
   SAVE_DIR: './checkpoints'
-  VAL_FREQ: 10000.0
+
+  # 数值有效性检查间隔，必须小于等于training batches(1)？？这里为什么bs=1
+  # defaults = 10000.0，必须是一个float有类型检查
+  VAL_FREQ: 1.0
   SAVE_FREQ: 10000    # 保存频率

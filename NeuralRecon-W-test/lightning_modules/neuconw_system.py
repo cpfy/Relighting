@@ -219,6 +219,9 @@ class NeuconWSystem(LightningModule):
         up_times = 2**up_level
 
         train_dim = int(low_dim * (2**up_level))
+
+        # <输出>训练阶段
+        # 示例值：train dim: 1024, upsampled 32 times, original dim 32, sparse num 3972
         print(
             f"train dim: {train_dim}, upsampled {up_times} times, original dim {low_dim}, sparse num {sparse_num}"
         )
@@ -250,6 +253,8 @@ class NeuconWSystem(LightningModule):
 
         B = local_xyz_.shape[0]
         out_chunks = []
+
+        # <输出> BG时：0/1986
         for i in tqdm(range(0, B, chunk), disable=local_rank != 0):
             new_sdf = self.renderer.sdf(
                 local_xyz_[i : i + chunk].reshape(-1, 1, 3).cuda()
@@ -267,6 +272,9 @@ class NeuconWSystem(LightningModule):
 
         # filter with threshold
         sparse_pc_sfm = xyz_sfm[sdf <= threshold].cpu().numpy()
+
+        # <输出>训练阶段
+        # 示例值：sdf filtered points 66599614, max sdf: -0.2899598479270935, min sdf: 0.6082887649536133
         print(
             f"sdf filtered points {sparse_pc_sfm.shape[0]}, max sdf: {torch.min(sdf)}, min sdf: {torch.max(sdf)}"
         )
@@ -276,16 +284,18 @@ class NeuconWSystem(LightningModule):
     def octree_update(
         self, train_level, threshold, device=0, chunk=65536, visualize=False
     ):
-        print("Updating sdf to octree....")
+        print("Updating sdf to octree....")     # <输出>训练阶段
 
         del self.renderer.fine_octree_data
 
         # get suface points
+        # 一大串输出，一直到sdf filtered points...
         sparse_pc_sfm, train_voxel_size = self.surface_selection(
             train_level, threshold, device, chunk
         )
 
         # use remaining points to generate new octree
+        # <报错> 此步生成octree占内存不够用
         octree_new, scene_origin, scale, level = gen_octree(
             self.renderer.recontruct_path,
             sparse_pc_sfm,
@@ -377,6 +387,7 @@ class NeuconWSystem(LightningModule):
         self.log("train/s_val", results["s_val"].mean())
         with torch.no_grad():
             if self.update_freq > 0 and (self.global_step + 1) % self.update_freq == 0:
+                # <报错> 内存超出
                 self.octree_update(
                     self.train_level, self.sdf_threshold, device=rays.device
                 )
@@ -502,6 +513,7 @@ class NeuconWSystem(LightningModule):
             eval_bbx_detail_center = (eval_bbx_detail_max + eval_bbx_detail_min) / 2
             dim_eval_bbx = np.max(eval_bbx_detail_max - eval_bbx_detail_min) / 2
 
+            # <输出> 其调用函数的内容，每轮epoch间隔都做一次
             mesh_detail = extract_mesh(
                 dim=256,
                 chunk=16384,

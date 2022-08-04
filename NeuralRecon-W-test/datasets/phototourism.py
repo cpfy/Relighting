@@ -107,11 +107,14 @@ class PhototourismDataset(Dataset):
         # sparse_voxel
         self.octree_data = None
         self.use_voxel = use_voxel
+        self.use_voxel = False      #todo [修改]可能这里导致了额外一步mask，使all_rays维度出现问题
         if self.use_voxel and not self.use_cache and self.split == "train":
-            print("Note: training near far will generate from sparse voxel!!!!")
+            print("Note: training near far will generate from sparse voxel!!!!")    # [输出] 显然train时出现了这一问题
 
         self.cache_paths = cache_paths
         self.shared_cache = shared_cache
+
+        # 默认为False，不用管，可能是multi gpus用到
         if shared_cache:
             assert (
                 shared_rgbs_base is not None
@@ -622,6 +625,7 @@ class PhototourismDataset(Dataset):
                             f"samples/depth/{image_name}.ply", gt_pcd
                         )
 
+                    # BG的数据集照片基本都自带semantics
                     if self.with_semantics:
                         semantic_map = np.load(
                             os.path.join(
@@ -650,8 +654,9 @@ class PhototourismDataset(Dataset):
                                 depths,
                                 weights,
                             ],
-                            1,
+                            1,  # 指拼接的维数dim=1
                         )  # (h*w, 13)
+                        # print(f"【Out】In line {656}，rays size={rays.size()}")  # [输出]每个image输出一次，格式均为[x,12]
                     else:
                         rays = torch.cat(
                             [
@@ -663,8 +668,9 @@ class PhototourismDataset(Dataset):
                                 depths,
                                 weights,
                             ],
-                            1,
+                            1,  # 指拼接的维数dim=1
                         )  # (h*w, 12)
+                        # print(f"【Out】In line {670}，rays size={rays.size()}")  # 不会输出，均为656
 
                     if self.split == "train" and self.use_voxel:
                         # replace near far with voxel intersection, and get rid of rays that don't intersect with any voxel
@@ -688,7 +694,7 @@ class PhototourismDataset(Dataset):
                         rays = rays[valid_mask]
 
                     # 此处的函数输出在 data_generation.sh 运行时多次出现
-                    # rays是[ray_o, ray_d,...,depth,weight]等一大串拼起来
+                    # rays是[ray_o, ray_d, ..., depth, weight]等一大串拼起来
                     if self.depth_percent > 0:
                         valid_depth = rays[:, -2] > 0
                         if not valid_depth.any():   # [Solve]官方的除0报错解决方案
@@ -725,16 +731,19 @@ class PhototourismDataset(Dataset):
 
                         # [报错]原写法除0报错: print(f"sample depth percent after padding: {torch.sum(rays[test_ind, -2] > 0) / rays[test_ind].size()[0]}")
                         if current_len == 0 or rays[test_ind].size()[0] == 0:
-                            print("Onr Zero Division.")
+                            print("Find One Zero Division.")
                         else:
                             print(f"sample depth percent after padding: {torch.sum(rays[test_ind, -2] > 0) / rays[test_ind].size()[0]}")
 
                     self.all_rgbs += [img]
                     self.all_rays += [rays]
+                    print(f"【Size：rays】{rays.size()}")              # [输出]size = [8538,12]
+                    print(f"【Size：all_rays】{len(self.all_rays)}")   # [报错]这是一个list，无法使用.size()方法
 
-                # if self.split == 'train':
-                #     self.all_rays = torch.cat(self.all_rays, 0) # ((N_images-1)*h*w, 10)
-                #     self.all_rgbs = torch.cat(self.all_rgbs, 0) # ((N_images-1)*h*w, 3)
+                # 如此重要的修正Tensor shape一行，哪个给注释了？？？导致train的shape一直报错
+                if self.split == 'train':
+                    self.all_rays = torch.cat(self.all_rays, 0) # ((N_images-1)*h*w, 10)
+                    self.all_rgbs = torch.cat(self.all_rgbs, 0) # ((N_images-1)*h*w, 3)
 
         elif self.split in [
             "val",
@@ -760,8 +769,15 @@ class PhototourismDataset(Dataset):
 
     def __getitem__(self, idx):
         if self.split == "train":  # use data in the buffers
+
+            # 加上上面line 744的Tensor shape修改总算格式ok了
+            # print(f"【Out】idx={idx}")    # [输出]121，100-200w等
+            # print(f"【Out】Type of all_rays = ", end="")  # [输出]<class 'list'>    加上上面一行总算正常了
+            # print(type(self.all_rays))
+            # print(f"【Out】Len of all_rays = {len(self.all_rays)}")   # [输出]184/263等，修复正确后恒为2333642
+
             sample = {
-                "rays": self.all_rays[idx, :8],
+                "rays": self.all_rays[idx, :8],     # [报错]list indices must be integers or slices, not tuple
                 "ts": self.all_rays[idx, 8].long(),
                 "rgbs": self.all_rgbs[idx],
             }

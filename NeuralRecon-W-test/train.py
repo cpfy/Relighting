@@ -19,8 +19,9 @@ def main(hparams, config):
     pl.seed_everything(config.TRAINER.SEED)
 
     # scale lr and warmup-step automatically
-    config.TRAINER.WORLD_SIZE = hparams.num_gpus * hparams.num_nodes
-    config.TRAINER.TRUE_BATCH_SIZE = config.TRAINER.WORLD_SIZE * hparams.batch_size
+    # 见issues9，nodes指分布式训练中，拥有 $num_gpus 的计算机数量
+    config.TRAINER.WORLD_SIZE = hparams.num_gpus * hparams.num_nodes                    # train.sh定义，目前是1*1
+    config.TRAINER.TRUE_BATCH_SIZE = config.TRAINER.WORLD_SIZE * hparams.batch_size     # train.sh定义，为2048
     _scaling = config.TRAINER.TRUE_BATCH_SIZE / config.TRAINER.CANONICAL_BS     # 使用的BS与标准BS差距倍数
     config.TRAINER.SCALING = _scaling
     config.TRAINER.LR = config.TRAINER.CANONICAL_LR * _scaling      #todo 跟opt.py里的LR关系？
@@ -68,7 +69,7 @@ def main(hparams, config):
                       # strategy='ddp' if hparams.num_gpus > 1 else None,
 
                       num_sanity_val_steps=1,
-                      val_check_interval=config.TRAINER.VAL_FREQ,
+                      val_check_interval=config.TRAINER.VAL_FREQ,   # yaml中，而非defaults里的参数
                       benchmark=True,
                       profiler="simple" if hparams.num_gpus==1 else None,
                       replace_sampler_ddp=replace_sampler_ddp,   # need to read all data of local dataset when config.DATASET.PHOTOTOURISM.IMG_DOWNSCALE==1

@@ -320,7 +320,21 @@ AttributeError: 'TestTubeLogger' object has no attribute '_convert_params'
 
 
 
-#### 文件夹重复？
+#### 遗留2
+
+一处没改，新的commit已解决
+
+```
+File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/utilities/apply_func.py", line 268, in move_data_to_device
+    dtype = (TransferableDataType, Batch) if _TORCHTEXT_AVAILABLE else TransferableDataType
+NameError: name '_TORCHTEXT_AVAILABLE' is not defined
+```
+
+
+
+#### 文件夹重复
+
+未知？
 
 ```
 Traceback (most recent call last):
@@ -336,5 +350,153 @@ Traceback (most recent call last):
   File "h5py/_objects.pyx", line 55, in h5py._objects.with_phil.wrapper
   File "h5py/h5d.pyx", line 87, in h5py.h5d.create
 ValueError: Unable to create dataset (name already exists)
+```
+
+
+
+#### torch元素类型
+
+
+
+```
+File "/content/drive/MyDrive/NeuralRecon-W-test/datasets/phototourism.py", line 762, in __getitem__
+    return self.val_num
+TypeError: list indices must be integers or slices, not tuple
+```
+
+
+
+#### 异常退出
+
+```
+Traceback (most recent call last):
+  File "train.py", line 86, in <module>
+    main(hparams, config)
+  File "train.py", line 78, in main
+    trainer.fit(system, datamodule=data_module)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 552, in fit
+    self._run(model)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 917, in _run
+    self._dispatch()
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 985, in _dispatch
+    self.accelerator.start_training(self)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/accelerators/accelerator.py", line 92, in start_training
+    self.training_type_plugin.start_training(trainer)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/plugins/training_type/training_type_plugin.py", line 161, in start_training
+    self._results = trainer.run_stage()
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 995, in run_stage
+    return self._run_train()
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 1044, in _run_train
+    self.fit_loop.run()
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/base.py", line 111, in run
+    self.advance(*args, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/fit_loop.py", line 200, in advance
+    epoch_output = self.epoch_loop.run(train_dataloader)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/base.py", line 111, in run
+    self.advance(*args, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/epoch/training_epoch_loop.py", line 118, in advance
+    _, (batch, is_last) = next(dataloader_iter)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/profiler/base.py", line 104, in profile_iterable
+    value = next(iterator)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/supporters.py", line 668, in prefetch_iterator
+    last = next(it)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/supporters.py", line 589, in __next__
+    return self.request_next_batch(self.loader_iters)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/supporters.py", line 617, in request_next_batch
+    return apply_to_collection(loader_iters, Iterator, next_fn)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/utilities/apply_func.py", line 96, in apply_to_collection
+    return function(data, *args, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/supporters.py", line 604, in next_fn
+    batch = next(iterator)
+  File "/usr/local/lib/python3.7/dist-packages/torch/utils/data/dataloader.py", line 652, in __next__
+    data = self._next_data()
+  File "/usr/local/lib/python3.7/dist-packages/torch/utils/data/dataloader.py", line 1347, in _next_data
+    return self._process_data(data)
+  File "/usr/local/lib/python3.7/dist-packages/torch/utils/data/dataloader.py", line 1373, in _process_data
+    data.reraise()
+  File "/usr/local/lib/python3.7/dist-packages/torch/_utils.py", line 461, in reraise
+    raise exception
+TypeError: Caught TypeError in DataLoader worker process 0.
+```
+
+
+
+#### 内存不足
+
+```
+Traceback (most recent call last):
+  File "train.py", line 86, in <module>
+    main(hparams, config)
+  File "train.py", line 78, in main
+    trainer.fit(system, datamodule=data_module)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 552, in fit
+    self._run(model)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 917, in _run
+    self._dispatch()
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 985, in _dispatch
+    self.accelerator.start_training(self)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/accelerators/accelerator.py", line 92, in start_training
+    self.training_type_plugin.start_training(trainer)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/plugins/training_type/training_type_plugin.py", line 161, in start_training
+    self._results = trainer.run_stage()
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 995, in run_stage
+    return self._run_train()
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/trainer/trainer.py", line 1044, in _run_train
+    self.fit_loop.run()
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/base.py", line 111, in run
+    self.advance(*args, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/fit_loop.py", line 200, in advance
+    epoch_output = self.epoch_loop.run(train_dataloader)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/base.py", line 111, in run
+    self.advance(*args, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/epoch/training_epoch_loop.py", line 130, in advance
+    batch_output = self.batch_loop.run(batch, self.iteration_count, self._dataloader_idx)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 100, in run
+    super().run(batch, batch_idx, dataloader_idx)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/base.py", line 111, in run
+    self.advance(*args, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 147, in advance
+    result = self._run_optimization(batch_idx, split_batch, opt_idx, optimizer)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 201, in _run_optimization
+    self._optimizer_step(optimizer, opt_idx, batch_idx, closure)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 403, in _optimizer_step
+    using_lbfgs=is_lbfgs,
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/core/lightning.py", line 1616, in optimizer_step
+    optimizer.step(closure=optimizer_closure)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/core/optimizer.py", line 206, in step
+    self.__optimizer_step(closure=closure, profiler_name=profiler_name, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/core/optimizer.py", line 128, in __optimizer_step
+    trainer.accelerator.optimizer_step(self._optimizer, self._optimizer_idx, lambda_closure=closure, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/accelerators/accelerator.py", line 296, in optimizer_step
+    self.run_optimizer_step(optimizer, opt_idx, lambda_closure, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/accelerators/accelerator.py", line 303, in run_optimizer_step
+    self.training_type_plugin.optimizer_step(optimizer, lambda_closure=lambda_closure, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/plugins/training_type/training_type_plugin.py", line 226, in optimizer_step
+    optimizer.step(closure=lambda_closure, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/torch/optim/optimizer.py", line 109, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/torch/optim/adam.py", line 118, in step
+    loss = closure()
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 235, in _training_step_and_backward_closure
+    result = self.training_step_and_backward(split_batch, batch_idx, opt_idx, optimizer, hiddens)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 536, in training_step_and_backward
+    result = self._training_step(split_batch, batch_idx, opt_idx, hiddens)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/loops/batch/training_batch_loop.py", line 306, in _training_step
+    training_step_output = self.trainer.accelerator.training_step(step_kwargs)
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/accelerators/accelerator.py", line 193, in training_step
+    return self.training_type_plugin.training_step(*step_kwargs.values())
+  File "/usr/local/lib/python3.7/dist-packages/pytorch_lightning/plugins/training_type/training_type_plugin.py", line 172, in training_step
+    return self.model.training_step(*args, **kwargs)
+  File "/content/drive/MyDrive/NeuralRecon-W-test/lightning_modules/neuconw_system.py", line 381, in training_step
+    self.train_level, self.sdf_threshold, device=rays.device
+  File "/content/drive/MyDrive/NeuralRecon-W-test/lightning_modules/neuconw_system.py", line 295, in octree_update
+    expand=False,
+  File "/content/drive/MyDrive/NeuralRecon-W-test/tools/prepare_data/generate_voxel.py", line 157, in gen_octree
+    octree = spc.unbatched_points_to_octree(quantized_pc, level)
+  File "/content/drive/MyDrive/NeuralRecon-W-test/kaolin/kaolin/ops/spc/points.py", line 75, in unbatched_points_to_octree
+    return _C.ops.spc.points_to_octree(points.contiguous(), level)
+RuntimeError: CUDA out of memory. Tried to allocate 1.00 GiB (GPU 0; 14.76 GiB total capacity; 11.90 GiB already allocated; 369.75 MiB free; 13.31 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
 ```
 

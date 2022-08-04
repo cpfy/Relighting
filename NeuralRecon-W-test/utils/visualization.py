@@ -34,6 +34,7 @@ def get_local_split(data, world_size, local_rank):
     local_data = xyz_padded[local_rank*local_split_length: (local_rank+1)*local_split_length]
     return local_data
 
+# 此处评估每一轮epoch间隔都在做
 def extract_mesh(dim, chunk, scene_radius, scene_origin, origin=None, radius=1.0,
                        with_color=False, embedding_a=None, chunk_rgb=256, sparse_data=None, renderer=None):
     if origin is None:
@@ -69,11 +70,14 @@ def extract_mesh(dim, chunk, scene_radius, scene_origin, origin=None, radius=1.0
     local_rank = get_rank()
     local_xyz_ = get_local_split(xyz_, world_size, local_rank)
 
+    # 完成数据加载、每轮epoch训练结束后，评估tqdm一批sdf
     if local_rank == 0:
-        print("start evaluating sdf...")
+        print("start evaluating sdf...")    # <输出>
     with torch.no_grad():
         B = local_xyz_.shape[0]
         out_chunks = []
+
+        # <输出>tqdm共0/128（不过时而1024），3s左右即可完成
         for i in tqdm(range(0, B, chunk), disable=local_rank!=0):
             new_sdf = renderer.sdf(local_xyz_[i:i + chunk].reshape(-1, 1, 3).cuda())
             out_chunks += [new_sdf.detach().cpu()]
@@ -87,6 +91,8 @@ def extract_mesh(dim, chunk, scene_radius, scene_origin, origin=None, radius=1.0
     if local_rank == 0:
         sdf_ = torch.cat(sdf_gathered, 0).cpu().numpy()
         sdf = sdf_[:xyz_.shape[0]]
+
+        # <输出> 示例值：max sdf: 0.5218308568000793, min sdf: -0.10423097014427185 0.52183086
         print(f'max sdf: {np.max(sdf.reshape(-1))}, min sdf: {np.min(sdf.reshape(-1))}', np.max(sdf.reshape(-1)))
         print(f'start marching cubes')
 
@@ -113,7 +119,7 @@ def extract_mesh(dim, chunk, scene_radius, scene_origin, origin=None, radius=1.0
 
         verts, faces, norms, vals = measure.marching_cubes(sdf, level=0, mask=mask_dense)
         if local_rank == 0:
-            print("radius: ", (np.max(verts[0]) - np.min(verts[0])) * voxel_size)
+            print("radius: ", (np.max(verts[0]) - np.min(verts[0])) * voxel_size)   # <输出>示例值如0.08xyzabcdef
 
         verts = verts * voxel_size + vol_origin  # voxel grid coordinates to training coordinates
         verts_w = verts * scene_radius + scene_origin # training coordinates to world coordinates
