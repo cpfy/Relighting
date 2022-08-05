@@ -159,6 +159,12 @@ $$
 
 与NRW、NeRF、NeRF-A、NeRF-W两个消融实验对比
 
+#### 可控制的外观
+
+* 使用 latent embedding $l^{(a)}\in\R^{n^{(a)}}$ 建模appearance，其一个好处在于可在不修改底层3D几何的情况下、修改渲染时的光照与外观
+* Figure1中的四个部分，就是用与不同训练图片集相关的appearance embedding渲染出的图像
+* Figure8的五张图片是在固定相机视角下、对左右两张图片的appearance embedding插值，渲染出的五张不同图片。渲染的图像外观在两个端点之间平滑过渡，而没有给三维几何引入伪影，插值非常自然
+
 
 
 ### 6.结论与不足

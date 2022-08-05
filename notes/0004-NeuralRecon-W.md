@@ -10,7 +10,7 @@ NeuralRecon-Wild，从多种不同光照下网络旅游图片中重建表面。�
 
 * 真实世界中的旅游景点图片丰富，但粒度等多变、光照不一致，需要相当的鲁棒性
 
-* appearance embeddings建模，并以meshes作为输出
+* 受NeRF-W启发，引入appearance embeddings，但以meshes作为输出，而不是辐射场。Meshes提供场景几何的直接表示，且可以容易地引入标准图形管线中
 * 借鉴NeuS体渲染方法，但原方法计算量太大，每个场景用32个GPU训练了10天？？？
 * 改进传统采样策略，体积引导 + 表面引导的混合采样
 
@@ -30,7 +30,7 @@ NeuralRecon-Wild，从多种不同光照下网络旅游图片中重建表面。�
 
 结合借鉴NeRF-W对无约束图片处理，扩展NeuS几何表面表示
 
-【沿用定义】三维点x，观察方向v，取d为SDF函数（表面为S={x|d(x)=0}），c为颜色
+【沿用定义】三维点x，观察方向v，取d为SDF函数（表面为S={x|d(x)=0}）；c为颜色；$\{e_i\}_{i=1}^N$ 是apperance embedding，随训练过程一起更新
 $$
 d=\text{MLP}_{\text{SDF}}(x)\\
 c_i=\text{MLP}_{\text{COLOR}}(x,v,e_i)

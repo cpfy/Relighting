@@ -291,7 +291,7 @@ IndexError: index is out of bounds for dimension with size 0
 
 
 
-#### lightning遗留问题
+#### lightning遗留
 
 应该是torch_lightning没改干净，重新修改fork分支
 
@@ -320,7 +320,7 @@ AttributeError: 'TestTubeLogger' object has no attribute '_convert_params'
 
 
 
-#### 遗留2
+【遗留问题2】
 
 一处没改，新的commit已解决
 
@@ -423,6 +423,8 @@ TypeError: Caught TypeError in DataLoader worker process 0.
 
 #### 内存不足
 
+downscale从10->15，batch_size从2048->1024解决该问题
+
 ```
 Traceback (most recent call last):
   File "train.py", line 86, in <module>
@@ -499,4 +501,66 @@ Traceback (most recent call last):
     return _C.ops.spc.points_to_octree(points.contiguous(), level)
 RuntimeError: CUDA out of memory. Tried to allocate 1.00 GiB (GPU 0; 14.76 GiB total capacity; 11.90 GiB already allocated; 369.75 MiB free; 13.31 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
 ```
+
+
+
+#### 完成训练输出信息
+
+```
+Epoch 19: 100%|██████████| 626/626 [06:13<00:00,  1.68it/s, loss=0.219, train/color_loss=0.169, train/normal_loss=0.00145, train/mask_error=0.0251, train/sfm_depth_loss=0.0125, train/psnr=19.90, val/psnr=16.60]
+Epoch 19: 100%|██████████| 626/626 [06:13<00:00,  1.68it/s, loss=0.219, train/color_loss=0.169, train/normal_loss=0.00145, train/mask_error=0.0251, train/sfm_depth_loss=0.0125, train/psnr=19.90, val/psnr=16.60]
+INFO - 2022-08-04 14:36:34,955 - base - FIT Profiler Report
+
+Action                             	|  Mean duration (s)	|Num calls      	|  Total time (s) 	|  Percentage %   	|
+--------------------------------------------------------------------------------------------------------------------------------------
+Total                              	|  -              	|_              	|  7440.9         	|  100 %          	|
+--------------------------------------------------------------------------------------------------------------------------------------
+run_training_epoch                 	|  356.19         	|20             	|  7123.8         	|  95.738         	|
+run_training_batch                 	|  0.5163         	|12500          	|  6453.7         	|  86.733         	|
+optimizer_step_and_closure_0       	|  0.43823        	|12500          	|  5477.9         	|  73.619         	|
+training_step_and_backward         	|  0.25746        	|12500          	|  3218.2         	|  43.251         	|
+model_forward                      	|  0.2377         	|12500          	|  2971.3         	|  39.932         	|
+training_step                      	|  0.23755        	|12500          	|  2969.4         	|  39.907         	|
+evaluation_step_and_end            	|  28.295         	|21             	|  594.19         	|  7.9855         	|
+validation_step                    	|  28.295         	|21             	|  594.19         	|  7.9854         	|
+backward                           	|  0.018791       	|12500          	|  234.89         	|  3.1567         	|
+get_train_batch                    	|  0.0017107      	|12500          	|  21.383         	|  0.28737        	|
+on_train_batch_end                 	|  0.0010557      	|12500          	|  13.196         	|  0.17735        	|
+training_batch_to_device           	|  0.00038316     	|12500          	|  4.7895         	|  0.064367       	|
+on_train_epoch_end                 	|  0.22528        	|20             	|  4.5055         	|  0.060551       	|
+on_after_backward                  	|  3.3122e-05     	|12500          	|  0.41403        	|  0.0055643      	|
+on_batch_start                     	|  3.0598e-05     	|12500          	|  0.38248        	|  0.0051402      	|
+on_batch_end                       	|  3.0303e-05     	|12500          	|  0.37879        	|  0.0050906      	|
+on_before_optimizer_step           	|  2.9181e-05     	|12500          	|  0.36476        	|  0.0049021      	|
+on_train_batch_start               	|  2.7165e-05     	|12500          	|  0.33956        	|  0.0045634      	|
+on_before_zero_grad                	|  2.7151e-05     	|12500          	|  0.33939        	|  0.0045611      	|
+on_before_backward                 	|  2.4814e-05     	|12500          	|  0.31017        	|  0.0041685      	|
+training_step_end                  	|  2.0135e-05     	|12500          	|  0.25169        	|  0.0033825      	|
+evaluation_batch_to_device         	|  0.0014027      	|21             	|  0.029456       	|  0.00039587     	|
+on_validation_end                  	|  0.00086022     	|21             	|  0.018065       	|  0.00024277     	|
+on_train_start                     	|  0.015743       	|1              	|  0.015743       	|  0.00021157     	|
+on_validation_batch_end            	|  0.00055351     	|21             	|  0.011624       	|  0.00015621     	|
+on_validation_start                	|  0.00051907     	|21             	|  0.0109         	|  0.00014649     	|
+on_train_epoch_start               	|  0.0005138      	|20             	|  0.010276       	|  0.0001381      	|
+on_validation_batch_start          	|  0.0001437      	|21             	|  0.0030177      	|  4.0555e-05     	|
+on_epoch_start                     	|  2.8559e-05     	|41             	|  0.0011709      	|  1.5736e-05     	|
+on_epoch_end                       	|  2.4445e-05     	|41             	|  0.0010022      	|  1.3469e-05     	|
+validation_step_end                	|  4.4674e-05     	|21             	|  0.00093815     	|  1.2608e-05     	|
+on_validation_epoch_end            	|  4.1283e-05     	|21             	|  0.00086694     	|  1.1651e-05     	|
+on_validation_epoch_start          	|  2.2263e-05     	|21             	|  0.00046753     	|  6.2832e-06     	|
+on_train_end                       	|  0.00036496     	|1              	|  0.00036496     	|  4.9048e-06     	|
+on_fit_start                       	|  3.4309e-05     	|1              	|  3.4309e-05     	|  4.6109e-07     	|
+on_val_dataloader                  	|  1.9739e-05     	|1              	|  1.9739e-05     	|  2.6528e-07     	|
+on_train_dataloader                	|  1.5682e-05     	|1              	|  1.5682e-05     	|  2.1075e-07     	|
+on_before_accelerator_backend_setup	|  1.0413e-05     	|1              	|  1.0413e-05     	|  1.3994e-07     	|
+```
+
+
+
+### Evaluating
+
+* GPU数量相关的参数均改为1，如\$nproc_per_node 参数指定为当前主机创建的进程数。一般设定为当前主机的 GPU 数量。默认值：4
+* 另一个常见问题是path容易写错
+
+
 
