@@ -20,8 +20,9 @@ export CUDA_VISIBLE_DEVICES=0
 # <核心>: 运行train.py脚本
 python train.py --cfg_path ${config_file} \
   --num_gpus $3 --num_nodes $4 \
-  --num_epochs 20 --batch_size 1024 --test_batch_size 512 --num_workers 4 \
+  --num_epochs 2 --batch_size 1024 --test_batch_size 512 --num_workers 4 \
   --exp_name ${jobname} 2>&1|tee log/${jobname}.log \
 
 # $num_workers指加载数据时工作进程个数，会有各种奇葩的多线程报错。（默认值：16）
 # 据说batch size大也会占用很多空间，尝试从defaults=2048降到1024
+# $num_epochs 默认值20，改为2

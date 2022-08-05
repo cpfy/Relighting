@@ -97,7 +97,7 @@ class NeuconWSystem(LightningModule):
             multires_view=4,
             output_ch=4,
             skips=[4],
-            encode_appearance=self.config.NEUCONW.ENCODE_A_BG,
+            encode_appearance=self.config.NEUCONW.ENCODE_A_BG,      # 是否包含appearance_encoding背景？defaults.py中该值为True
             in_channels_a=self.config.NEUCONW.N_A,
             in_channels_dir=6 * self.config.NEUCONW.COLOR_CONFIG.multires_view + 3,
             use_viewdirs=True,
@@ -107,7 +107,7 @@ class NeuconWSystem(LightningModule):
 
         spc_options = {
             "voxel_size": self.scene_config["voxel_size"],
-            "recontruct_path": self.config.DATASET.ROOT_DIR,
+            "reconstruct_path": self.config.DATASET.ROOT_DIR,
             "min_track_length": self.scene_config["min_track_length"],
         }
 
@@ -288,7 +288,7 @@ class NeuconWSystem(LightningModule):
 
         del self.renderer.fine_octree_data
 
-        # get suface points
+        # get surface points
         # 一大串输出，一直到sdf filtered points...
         sparse_pc_sfm, train_voxel_size = self.surface_selection(
             train_level, threshold, device, chunk
@@ -297,7 +297,7 @@ class NeuconWSystem(LightningModule):
         # use remaining points to generate new octree
         # <报错> 此步生成octree占内存不够用
         octree_new, scene_origin, scale, level = gen_octree(
-            self.renderer.recontruct_path,
+            self.renderer.reconstruct_path,
             sparse_pc_sfm,
             train_voxel_size,
             device=device,

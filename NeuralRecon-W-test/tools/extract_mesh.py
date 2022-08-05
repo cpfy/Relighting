@@ -28,14 +28,14 @@ def get_opts():
     parser.add_argument('--dataset_name', type=str, default='phototourism',
                         choices=['blender', 'phototourism'],
                         help='which dataset to validate')
-    parser.add_argument('--eval_level', type=int, default=-1,
-                        help='level og precision')
+    parser.add_argument('--eval_level', type=int, default=-1,       # 大概指的是评估的精确度标准
+                        help='level of precision')
     parser.add_argument('--mesh_size', type=int, default=128,
                         help='resolution of mesh, (N, N, N)')
     parser.add_argument('--mesh_origin', type=str, default="0, 0, 0",
                         help='origin of mesh, (x, y, z)')
     parser.add_argument('--mesh_radius', type=float, default=1.0,
-                        help='radius pf mesh')
+                        help='radius of mesh')
     parser.add_argument('--vertex_color', default=False, action="store_true",
                         help='whether add color to mesh')
     parser.add_argument('--num_gpus', type=int, default=1,
@@ -101,6 +101,7 @@ def gen_grid_spc(scene_config, data_path, eval_level, device=0):
 
     return sparse_data
 
+# sdf_extract.sh脚本运行此文件
 if __name__ == "__main__":
     args = get_opts()
     config = get_cfg_defaults()
@@ -108,6 +109,7 @@ if __name__ == "__main__":
     scene_config_path = os.path.join(config.DATASET.ROOT_DIR, "config.yaml")
     with open(scene_config_path, "r") as yamlfile:
         scene_config = yaml.load(yamlfile, Loader=yaml.FullLoader)
+
     # resolve mesh origin
     args.mesh_origin = [float(corr.strip()) for corr in args.mesh_origin.split(',')]
 
@@ -116,7 +118,10 @@ if __name__ == "__main__":
     os.makedirs(dir_name, exist_ok=True)
     print(f"result saved in {dir_name}")
 
-    num_gpus = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
+    # <报错>自动检测成4个了
+    # num_gpus = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
+    num_gpus = 1
+
     print('number of gpus: {}'.format(num_gpus))
     args.DISTRIBUTED = num_gpus > 0
 
@@ -151,12 +156,16 @@ if __name__ == "__main__":
         sparse_data = gen_grid_spc(scene_config, config.DATASET.ROOT_DIR, args.eval_level, device=dist.get_rank())
     else:
         sparse_data = None
+
+    # 评估mesh的效果
     mesh = extract_mesh(
         args.mesh_size, args.chunk, scene_config['radius'], scene_config['origin'],
         origin=args.mesh_origin, radius=args.mesh_radius, with_color=args.vertex_color,
         embedding_a=neuconw_sys.embedding_a((torch.ones(1, device=neuconw_sys.device) * 1123).long()),
         chunk_rgb=args.chunk_rgb, sparse_data=sparse_data, renderer = neuconw_sys.renderer)
     colored = '_colored' if args.vertex_color else ''
+
+    # <输出>评估脚本sdf_extract.sh完成时
     if dist.get_rank() == 0:
         print("Saving mesh.....")
         if args.eval_level > 0:

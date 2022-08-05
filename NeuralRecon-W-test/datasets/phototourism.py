@@ -18,7 +18,7 @@ import time
 from kornia import create_meshgrid
 import h5py
 
-# additinal configuarion
+# additional configuration
 sfm_path = "sparse"
 vis_octree = False
 vis_intersection = False
@@ -703,16 +703,16 @@ class PhototourismDataset(Dataset):
                         valid_num = torch.sum(valid_depth).long().item()    # torch.Tensor.item(): 返回单个元素张量的值
                         current_len = rays.size()[0]
 
-                        # 原写法除0报错: curent_percent = valid_num / current_len
+                        # 原写法除0报错: current_percent = valid_num / current_len
                         if current_len == 0:
-                            curent_percent = 2.22222
+                            current_percent = 2.22222
                         else:
-                            curent_percent = valid_num / current_len    # [报错]运行时有一个ZeroDivision报错
+                            current_percent = valid_num / current_len    # [报错]运行时有一个ZeroDivision报错
 
                         # 例如，对BG：pad_len = (0.2*len-?)/0.8
                         # 一般是个5w-15w之间的数
                         padding_length = int(np.ceil((self.depth_percent * current_len - valid_num) / (1 - self.depth_percent)))
-                        print(f"padding valid depth percentage: from {curent_percent} to {self.depth_percent} with padding {padding_length}")
+                        print(f"padding valid depth percentage: from {current_percent} to {self.depth_percent} with padding {padding_length}")
 
                         pad_ind = torch.floor((torch.rand(padding_length) * valid_num)).long()
                         result_length = padding_length + current_len

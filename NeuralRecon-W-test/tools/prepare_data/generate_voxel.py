@@ -24,6 +24,7 @@ def filter_p3d_w_track_length(points3D, min_track_length=12):
     return np.array(points)
 
 
+# 稀疏扩张？
 def expand_points(points, voxel_size):
     """
     A naive version of the sparse dilation.
@@ -38,8 +39,9 @@ def expand_points(points, voxel_size):
     return np.unique(points_expanded, axis=0)
 
 
+# 从sfm获取octree，核心在于读取了dense/sparse/points3D.bin点云数据，从中构建
 def gen_octree_from_sfm(
-    recontruct_path,
+    reconstruct_path,
     min_track_length,
     voxel_size,
     sfm_path="sparse",
@@ -49,13 +51,13 @@ def gen_octree_from_sfm(
     radius=1.0,
 ):
     # read 3d points from sfm result, and filter them
-    point_path = os.path.join(recontruct_path, f"dense/{sfm_path}/points3D.bin")
+    point_path = os.path.join(reconstruct_path, f"dense/{sfm_path}/points3D.bin")
     points_3d = read_points3d_binary(point_path)
     points_ori = []
     for id, p in points_3d.items():
         if p.point2D_idxs.shape[0] > min_track_length:
             points_ori.append(p.xyz)
-    points = np.array(points_ori)
+    points = np.array(points_ori)   # 把3d点云数据存储为array
     logger.debug(
         f"Points filtered from raw point cloud: {points.shape[0]}/{len(points_3d)}"
     )
@@ -68,12 +70,13 @@ def gen_octree_from_sfm(
         o3d.io.write_point_cloud(f"samples/voxel_vis_source.ply", gt_pcd)
 
     return gen_octree(
-        recontruct_path, points, voxel_size, device, visualize, expand, radius
+        reconstruct_path, points, voxel_size, device, visualize, expand, radius
     )
 
 
+# 生成octree核心函数
 def gen_octree(
-    recontruct_path,
+    reconstruct_path,
     points,
     voxel_size,
     device=0,
@@ -82,7 +85,7 @@ def gen_octree(
     radius=1.0,
     in_sfm=True,
 ):
-    scene_config_path = os.path.join(recontruct_path, "config.yaml")
+    scene_config_path = os.path.join(reconstruct_path, "config.yaml")
     # read scene config
     with open(scene_config_path, "r") as yamlfile:
         scene_config = yaml.load(yamlfile, Loader=yaml.FullLoader)
@@ -107,7 +110,7 @@ def gen_octree(
     # dimensions
     dim = np.max(bbx_max - bbx_min)
 
-    # points dialation
+    # points dilation
     for _ in range(expand):
         points = expand_points(points, voxel_size)
 
@@ -124,6 +127,8 @@ def gen_octree(
     logger.debug(
         f"number of points for voxel generation: {points_filtered.shape[0]}/{points_normalized.shape[0]}"
     )
+    # <BG:Result1> number of points for voxel generation: 725832/744660
+    # <BG:Result2> number of points for voxel generation: 3862151 / 3893596
 
     if visualize:
         print(f"saving... at samples/voxel_vis_norm.ply")
@@ -144,8 +149,10 @@ def gen_octree(
     # calculate level
     points_filtered = torch.from_numpy(points_filtered).to(device)  # N, 3
     level = int(np.floor(np.log2(2 * scale / voxel_size)))
-    logger.debug(f"level: {level} for expected voxel size: {voxel_size}")
+    logger.debug(f"level: {level} for expected voxel size: {voxel_size}")   # <Result> level: 5 for expected voxel size: 0.25
 
+    # spc指结构化点云sparse cloud，可放大和加速神经隐式表示
+    # 相应的转化函数in package kaolin
     quantized_pc = spc.points.quantize_points(points_filtered, level)
     octree = spc.unbatched_points_to_octree(quantized_pc, level)
 
@@ -170,6 +177,7 @@ def gen_octree(
     return octree, scene_origin, scale, level
 
 
+# 利用spc包从octree->spc转化
 def octree_to_spc(octree):
     lengths = torch.tensor([len(octree)], dtype=torch.int32)
     _, pyramid, prefix = spc.scan_octrees(octree, lengths)
@@ -192,7 +200,7 @@ def level_upgrade(
     octree_scale,
     src_level,
     target_level,
-    recontruct_path,
+    reconstruct_path,
     visualize=False,
 ):
     # upsample octree
@@ -231,7 +239,7 @@ def level_upgrade(
     xyz_sfm = sparse_ind_up * target_voxel_size + vol_origin
 
     return gen_octree(
-        recontruct_path,
+        reconstruct_path,
         xyz_sfm.cpu().numpy(),
         target_voxel_size,
         device=device,
@@ -246,7 +254,7 @@ def level_downgrade(
     octree_scale,
     src_level,
     target_level,
-    recontruct_path,
+    reconstruct_path,
     visualize=False,
 ):
     device = octree.device
@@ -266,7 +274,7 @@ def level_downgrade(
     target_voxel_size = 2 / (2**target_level) * octree_scale
 
     return gen_octree(
-        recontruct_path,
+        reconstruct_path,
         xyz_sfm,
         target_voxel_size,
         device=device,
@@ -281,7 +289,7 @@ def octree_level_adjust(
     octree_scale,
     src_level,
     target_level,
-    recontruct_path,
+    reconstruct_path,
     visualize,
 ):
     if target_level > src_level:
@@ -291,7 +299,7 @@ def octree_level_adjust(
             octree_scale,
             src_level,
             target_level,
-            recontruct_path,
+            reconstruct_path,
             visualize,
         )
     elif target_level < src_level:
@@ -301,13 +309,14 @@ def octree_level_adjust(
             octree_scale,
             src_level,
             target_level,
-            recontruct_path,
+            reconstruct_path,
             visualize,
         )
     else:
         return octree, octree_origin, octree_scale, src_level
 
 
+#todo 获取远、近边界？
 def get_near_far(
     rays_o,
     rays_d,
@@ -328,7 +337,7 @@ def get_near_far(
 
     'with_exit': set true to obtain accurate far. Default to false as this will perform aabb twice
     """
-    # Avoid corner cases. issuse in kaolin: https://github.com/NVIDIAGameWorks/kaolin/issues/490
+    # Avoid corner cases. issues in kaolin: https://github.com/NVIDIAGameWorks/kaolin/issues/490
     rays_d = rays_d.clone() + 1e-7
     rays_o = rays_o.clone() + 1e-7
 
@@ -355,6 +364,7 @@ def get_near_far(
     rays_near = torch.zeros_like(rays_o_normalized[:, :1])
     rays_far = torch.zeros_like(rays_o_normalized[:, :1])
 
+    # ray_index应指光线索引号，pt_ids指点编号？
     ray_index, pt_ids, depth_in_out = spc_render.unbatched_raytrace(
         octree,
         points,
@@ -366,7 +376,7 @@ def get_near_far(
         return_depth=True,
         with_exit=with_exit,
     )
-    ray_index = ray_index.long()
+    ray_index = ray_index.long()    # torch.long(): 将tensor投射为long类型(即int64)
     if not with_exit:
         # if no exit, far will be the entry point of the last intersecting. This is an inaccurate far, but will be more efficient
         depth_in_out = torch.cat([depth_in_out, depth_in_out], axis=1)
@@ -374,12 +384,14 @@ def get_near_far(
     near_index, near_count = torch.unique_consecutive(ray_index, return_counts=True)
 
     if ray_index.size()[0] == 0:
-        print("[WARNING] batch has 0 intersections!!")
+        print("[WARNING] batch has 0 intersections!!")  # 运行data_generation.sh时，多次出现此报错
         if return_pts:
             return rays_near, rays_far, rays_pid
         else:
-            return rays_near, rays_far
+            return rays_near, rays_far  # 默认return_pts=False，返回此结果
 
+    # torch.cumsum(): 返回维度dim中input元素的累积和
+    # torch.roll(): 张量元素移位
     near_inv = torch.roll(torch.cumsum(near_count, dim=0), shifts=1)
     near_inv[0] = 0
 
@@ -446,11 +458,14 @@ if __name__ == "__main__":
     from torch.utils.data import DataLoader
 
     voxel_size = 0.1
-    recontruct_path = "/nas/datasets/IMC/phototourism/training_set/brandenburg_gate"
+    reconstruct_path = "/nas/datasets/IMC/phototourism/training_set/brandenburg_gate"
     min_track_length = 50
+
+    # 从sfm获取octree，核心在于读取了dense/sparse/points3D.bin点云数据，从中构建
     octree, scene_origin, scale, level = gen_octree_from_sfm(
-        recontruct_path, min_track_length, voxel_size, visualize=True
+        reconstruct_path, min_track_length, voxel_size, visualize=True
     )
+
     # gen fake ray origin and direction
     rays_o = (
         torch.from_numpy(np.array([-0.2874, -0.1635, -0.6985]).reshape(1, 3)).cuda()
@@ -478,6 +493,11 @@ if __name__ == "__main__":
 
         w, h = sample["img_wh"][0]
         chunk = 256
+
+        # [测试]然而data_generation.sh根本没输出这两个值
+        # print(f"B={B}")
+        # print(f"chunk={chunk}")
+
         for i in tqdm(range(0, B, chunk)):
             batch_rays = rays[i : i + chunk]
             near, far = get_near_far(

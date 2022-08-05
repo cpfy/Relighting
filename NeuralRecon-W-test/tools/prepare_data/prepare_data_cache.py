@@ -13,6 +13,9 @@ import torch
 from tqdm import tqdm
 
 
+##### 本文件主要用于生成ray/rgbs等数据 cache #####
+
+# [func]增加一批dataset相关参数
 def get_opts():
     parser = argparse.ArgumentParser()
 
@@ -39,6 +42,9 @@ def get_opts():
         choices=["h5", "npz"],
         help="which type of cache to save",
     )
+
+    # 这里的参数好像覆盖了defaults.py中的？
+    # [测试]增大是否会减小内存占用（后来去sh中修改）
     parser.add_argument(
         "--img_downscale",
         type=int,
@@ -75,6 +81,7 @@ def query_list_of_tensors(list_of_tensors, index):
         pointer += t.shape[0]
 
 
+# 所有数据分割成块
 def split_to_chunks(
     rgbs, all_lengths, chunk_length, split_path, args, padding_index, arr_type="rgbs"
 ):
@@ -159,6 +166,8 @@ def split_to_chunks(
         json.dump(meta_info, outfile)
 
 
+# 核心即准备data缓存
+# data_generation调用的核心函数/文件
 if __name__ == "__main__":
     args = get_opts()
     os.makedirs(os.path.join(args.root_dir, args.cache_dir), exist_ok=True)
@@ -171,8 +180,10 @@ if __name__ == "__main__":
             "split": "train",
             "img_downscale": args.img_downscale,
             "with_semantics": with_semantic,
-            "semantic_map_path": args.semantic_map_path,
+            "semantic_map_path": args.semantic_map_path,    # 语义map
         }
+
+    # dataset_dict()为datasets里一串的初始化函数
     dataset = dataset_dict[args.dataset_name](**kwargs)
 
     if args.split_to_chunks > 0:
@@ -215,24 +226,24 @@ if __name__ == "__main__":
                 args.root_dir, f"{args.cache_dir}/rays{args.img_downscale}.h5"
             )
             with h5py.File(rays_file, "w") as f:
-                f.create_dataset("rays", data=dataset.all_rays.numpy(), chunks=True)
+                f.create_dataset("rays", data=torch.cat(dataset.all_rays).numpy(), chunks=True)
             rgbs_file = os.path.join(
                 args.root_dir, f"{args.cache_dir}/rgbs{args.img_downscale}.h5"
             )
             with h5py.File(rgbs_file, "w") as f:
-                f.create_dataset("rgbs", data=dataset.all_rgbs.numpy(), chunks=True)
+                f.create_dataset("rgbs", data=torch.cat(dataset.all_rgbs).numpy(), chunks=True)
         else:
             np.savez_compressed(
                 os.path.join(
                     args.root_dir, f"{args.cache_dir}/rays{args.img_downscale}.npz"
                 ),
-                dataset.all_rays.numpy(),
+                torch.cat(dataset.all_rays).numpy(),
             )
             np.savez_compressed(
                 os.path.join(
                     args.root_dir, f"{args.cache_dir}/rgbs{args.img_downscale}.npz"
                 ),
-                dataset.all_rgbs.numpy(),
+                torch.cat(dataset.all_rgbs).numpy(),
             )
         t = (time.time() - start_time) / 60
         print(f"Using {t} min to save!")
