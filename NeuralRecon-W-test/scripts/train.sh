@@ -2,8 +2,10 @@
 set -x
 set -u
 
-
+# 不用这个太繁琐了
 now=$(date +"%Y%m%d_%H%M%S")
+#now=$(date +"%Y%m%d")
+
 jobname="train-$1-$now"
 echo "job name is $jobname"
 

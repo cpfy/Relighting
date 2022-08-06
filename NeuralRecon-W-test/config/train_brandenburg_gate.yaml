@@ -90,4 +90,4 @@ TRAINER:
   # 数值有效性检查间隔，必须小于等于training batches(1)？？这里为什么bs=1
   # defaults = 10000.0，必须是一个float有类型检查
   VAL_FREQ: 1.0
-  SAVE_FREQ: 10000    # 保存频率
+  SAVE_FREQ: 2000    # 保存频率。默认值10000
