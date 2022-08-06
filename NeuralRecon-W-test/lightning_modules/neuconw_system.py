@@ -182,6 +182,7 @@ class NeuconWSystem(LightningModule):
 
         return results
 
+    # neuconw模型的optimizer初始化（传入config参数）
     def configure_optimizers(self):
         self.optimizer = get_optimizer(self.config.TRAINER, self.models_to_train)
         scheduler = get_scheduler(self.hparams, self.config.TRAINER, self.optimizer)

@@ -20,6 +20,7 @@ def get_parameters(models):
         parameters += list(models.parameters())
     return parameters
 
+# 根据config参数（defaults.py或者hparam），neuconw模型的optimizer初始化（直接调用torch）
 def get_optimizer(config, models):
     eps = 1e-7
     parameters = get_parameters(models)
@@ -29,6 +30,7 @@ def get_optimizer(config, models):
     elif config.OPTIMIZER == 'adam':
         optimizer = Adam(parameters, lr=config.LR, eps=eps, 
                          weight_decay=config.WEIGHT_DECAY)
+                         # ,capturable = True)     # 很奇怪，依然无效
     elif config.OPTIMIZER == 'radam':
         optimizer = optim.RAdam(parameters, lr=config.LR, eps=eps, 
                                 weight_decay=config.WEIGHT_DECAY)
@@ -37,6 +39,12 @@ def get_optimizer(config, models):
                                  weight_decay=config.WEIGHT_DECAY)
     else:
         raise ValueError('optimizer not recognized!')
+
+    # See：https://github.com/pytorch/pytorch/issues/80809
+    # 处理error: assert not step_t.is_cuda, "If capturable=False, state_steps should not be CUDA tensors.
+    # optimizer.param_groups[0]['capturable'] = True    # [无效]考虑之前optim时就设定好
+    # torch==1.12.1移除这一assert，见https://github.com/pytorch/pytorch/pull/80222
+    # 最终的解决方案是colab安装1.12.1，不清楚是不是lightning的bug（估计就算有bug也已经更新，而自己装的是山寨fork 1.4.8版本）
 
     return optimizer
 

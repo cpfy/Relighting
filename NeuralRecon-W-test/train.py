@@ -76,6 +76,10 @@ def main(hparams, config):
                       gradient_clip_val=0.99
                       )
 
+    # 之前在neuconw_system里修改无效，可能得加载完ckpts再改，加载过程改变了参数？
+    # system.optimizer.param_groups[0]['capturable'] = True     #[报错] 没法直接访问attributes
+    # system.configure_optimizers()     # 继续无效，可能optim初始化时capturable就得设定
+
     trainer.fit(system, datamodule=data_module)
 
 

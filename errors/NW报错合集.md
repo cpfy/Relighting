@@ -2,6 +2,8 @@
 
 ## NW-Environment
 
+> In Colab. @Copyright 2022
+
 NeuralRecon-W环境也太难配了，😭
 
 ### Installation
@@ -356,7 +358,7 @@ ValueError: Unable to create dataset (name already exists)
 
 #### torch元素类型
 
-
+**报错：**
 
 ```
 File "/content/drive/MyDrive/NeuralRecon-W-test/datasets/phototourism.py", line 762, in __getitem__
@@ -366,7 +368,21 @@ TypeError: list indices must be integers or slices, not tuple
 
 
 
+**解决：**
+
+由于 `datasets/phototourism.py` 中一行reshape被注释了，导致 `self.all_rays` 的shape不对，恢复即可
+
+```
+if self.split == 'train':
+	self.all_rays = torch.cat(self.all_rays, 0) # ((N_images-1)*h*w, 10)
+	self.all_rgbs = torch.cat(self.all_rgbs, 0) # ((N_images-1)*h*w, 3)
+```
+
+
+
 #### 异常退出
+
+**报错：**
 
 ```
 Traceback (most recent call last):
@@ -421,9 +437,15 @@ TypeError: Caught TypeError in DataLoader worker process 0.
 
 
 
+**解决：**
+
+可能是workers个数设置不对，0和默认值16好像都不行？改成colab说的gpu_num=4后未出现过
+
+
+
 #### 内存不足
 
-downscale从10->15，batch_size从2048->1024解决该问题
+**报错：**
 
 ```
 Traceback (most recent call last):
@@ -504,6 +526,12 @@ RuntimeError: CUDA out of memory. Tried to allocate 1.00 GiB (GPU 0; 14.76 GiB t
 
 
 
+**解决：**
+
+img_downscale从10->15，batch_size从2048->1024解决该问题
+
+
+
 #### 完成训练输出信息
 
 ```
@@ -554,6 +582,38 @@ on_val_dataloader                  	|  1.9739e-05     	|1              	|  1.973
 on_train_dataloader                	|  1.5682e-05     	|1              	|  1.5682e-05     	|  2.1075e-07     	|
 on_before_accelerator_backend_setup	|  1.0413e-05     	|1              	|  1.0413e-05     	|  1.3994e-07     	|
 ```
+
+
+
+#### 从ckpt继续训练
+
+**报错：**
+
+```
+  File "/usr/local/lib/python3.7/dist-packages/torch/optim/adam.py", line 255, in _single_tensor_adam
+    assert not step_t.is_cuda, "If capturable=False, state_steps should not be CUDA tensors."
+AssertionError: If capturable=False, state_steps should not be CUDA tensors.
+```
+
+
+
+torch==1.12.0的bug，见：https://github.com/pytorch/pytorch/issues/80809
+
+在utils/\_\_init\_\_.py中optimizer初始化函数（或者neuconw_system.py）添加一行：`optimizer.param_groups[0]['capturable'] = True`
+
+（**此方法毫无用处！设置后capturable在报错的assert处仍为false，怀疑可能是lightning的bug？**）
+
+
+
+**解决方法：**
+
+（2022.08.06 release pytorch==1.12.1版本）更新colab可解决
+
+```
+!pip install torch==1.12.1+cu113 -f https://download.pytorch.org/whl/torch_stable.html
+```
+
+
 
 
 
