@@ -1,6 +1,6 @@
 
 
-### exp_BG
+## exp_BG
 
 设定参数 `IMG_DOWNSCALE=15` 以及
 
@@ -10,6 +10,18 @@ python train.py --cfg_path ${config_file} \
   --num_epochs 2 --batch_size 1024 --test_batch_size 512 --num_workers 4 \
   --exp_name ${jobname} 2>&1|tee log/${jobname}.log \
 ```
+
+
+
+#### Details
+
+分两次训练
+
+1、epoch：0-19
+train-exp_BG-20220804_123226
+
+2、epoch：20-49
+train-exp_BG-20220806_0553
 
 
 
