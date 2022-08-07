@@ -45,6 +45,7 @@ def get_opts():
     return parser.parse_args()               
 
 
+# 评估用，main函数直接调用本函数
 def eval_mesh(file_pred, file_trgt, scene_config, is_mesh, threshold=.1, bbx_name='eval_bbx', use_o3d=True, save_name="eval"):
     """eval two point clouds
 
@@ -92,13 +93,17 @@ def eval_mesh(file_pred, file_trgt, scene_config, is_mesh, threshold=.1, bbx_nam
     for i, _ in enumerate(threshold):
         save_path =  os.path.join(save_dir, "visualize", f"{threshold[i]:.2f}")
         os.makedirs(save_path, exist_ok=True)
+
         # visualize error
+        # 此处生成了大量350M+的error的ply文件，直接把Drive挤爆了
         if use_o3d:
             visualize_error(verts_pred, dist2, f"{save_path}/error_pred_precision.ply", threshold[i])
             visualize_error(verts_trgt, dist1, f"{save_path}/error_gt_recal.ply", threshold[i])
         
         metrics = _compute(dist1, dist2, threshold[i])
-        
+
+        # 该文件中记录所有threshold、fscores、precs结果，不过测试时后两个均为{nan,...,nan}列表
+        # 应该是由于打开文件报错（RPly: Unable to open file）
         rslt_file = os.path.join(save_path, 'metrics.json')
         json.dump(metrics, open(rslt_file, 'w'))
 
@@ -123,11 +128,12 @@ def eval_mesh(file_pred, file_trgt, scene_config, is_mesh, threshold=.1, bbx_nam
     return metrics
 
 
+# 核心mesh评估函数，eval_pipeline.sh脚本调用
 if __name__ == "__main__":
     args = get_opts()
     args.threshold = [float(num.strip()) for num in args.threshold.split(',')]
     args.threshold = list(np.arange(args.threshold[0], args.threshold[1], args.threshold[2]))
-    print(f"thresholds to eval: {args.threshold}")
+    print(f"thresholds to eval: {args.threshold}")  # 输出全部评估threshold的list
 
     # read scene config
     with open(args.scene_config_path, "r") as yamlfile:

@@ -738,7 +738,7 @@ class PhototourismDataset(Dataset):
                     self.all_rgbs += [img]
                     self.all_rays += [rays]
                     print(f"【Size：rays】{rays.size()}")              # [输出]size = [8538,12]
-                    print(f"【Size：all_rays】{len(self.all_rays)}")   # [报错]这是一个list，无法使用.size()方法
+                    print(f"【Len：all_rays】{len(self.all_rays)}")   # [报错]这是一个list，无法使用.size()方法
 
                 # 如此重要的修正Tensor shape一行，哪个给注释了？？？导致train的shape一直报错
                 if self.split == 'train':

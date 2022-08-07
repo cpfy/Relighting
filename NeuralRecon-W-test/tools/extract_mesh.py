@@ -101,7 +101,7 @@ def gen_grid_spc(scene_config, data_path, eval_level, device=0):
 
     return sparse_data
 
-# sdf_extract.sh脚本运行此文件
+# eval_pipeline.sh脚本第二步运行此文件
 if __name__ == "__main__":
     args = get_opts()
     config = get_cfg_defaults()

@@ -21,11 +21,18 @@ class NeuconWLoss(nn.Module):
     def forward(self, inputs, targets, masks=None):
         ret = {}
         if masks is None:
-                masks = torch.ones((targets.shape[0], 1)).to(targets.device)
+            masks = torch.ones((targets.shape[0], 1)).to(targets.device)
         mask_sum = masks.sum() + 1e-5
+
+        # 第一项color_loss计算
+        # l1_loss的文档：https://pytorch.org/docs/stable/generated/torch.nn.L1Loss.html#torch.nn.L1Loss
+        # l_n=|x_n-y_n| 后面的sum表示 L=\sum l_n，最终计算结果是指每个像素的颜色误差之和
+        # masks是torch.ones()生成的，因此此处即表示 m*n 或者说 i*j
         color_error = (inputs['color'] - targets) * masks
         ret['color_loss'] = torch.nn.functional.l1_loss(color_error, torch.zeros_like(color_error), reduction='sum') / mask_sum
 
+        # 第二项normal_loss计算
+        # 系数0.1 * （估计是网络算出的相关参数），后面同理
         ret['normal_loss'] = self.igr_weight * inputs['gradient_error'].mean()
 
         if self.config.NEUCONW.MESH_MASK_LIST is not None:

@@ -251,6 +251,8 @@ def split_list(_list, n):
     return ret
 
 
+# eval_pipeline.sh脚本第一步运行此文件
+# 不过貌似RPly读取ply报错导致这里一个都没有输出
 if __name__ == "__main__":
     reconstruct_path = 'dense/sparse'
     print(f"result will be saved to {args.output_path}")
