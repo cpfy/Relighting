@@ -10,11 +10,15 @@
 
 1、epoch 0-1（时间5h左右）
 
-exp_BG-20220806_0553
+exp_BG-20220806_084655
+
+2、epoch
+
+exp_BG-20220806_1454
 
 
 
-#### Epoch2
+#### Epoch 2
 
 ```
 100%|██████████| 1024/1024 [00:12<00:00, 78.97it/s]max sdf: 0.21636241674423218, min sdf: -0.23751065135002136 0.21636242
@@ -72,4 +76,17 @@ on_before_accelerator_backend_setup	|  1.044e-05      	|1              	|  1.044
 ```
 
 
+
+#### Epoch 6
+
+08.07晚上挂机，跑了一晚上+上午到epoch6左右，iter到168000
+
+```
+100%|██████████| 1986/1986 [01:31<00:00, 21.63it/s]
+2022-08-07 02:47:19.785 | DEBUG    | tools.prepare_data.generate_voxel:gen_octree:128 - number of points for voxel generation: 66163718/66163718
+2022-08-07 02:47:20.088 | DEBUG    | tools.prepare_data.generate_voxel:gen_octree:152 - level: 10 for expected voxel size: 0.008139948706530686
+sdf filtered points 66163718, max sdf: -0.3115154206752777, min sdf: 0.28325119614601135
+Update successful!!
+Epoch 6:  83%|████████▎ | 19429/23378 [2:04:58<25:24,  2.59it/s, loss=0.192, train/color_loss=0.138, train/normal_loss=0.0009, train/mask_error=0.0368, train/sfm_depth_loss=0.0113, train/psnr=21.30, val/psnr=15.00] 
+```
 
