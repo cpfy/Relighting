@@ -208,6 +208,24 @@ shadows、anneals、ray jitter、shadow jitter、shadow regularariser均有效
 
 
 
+### 附录
+
+#### A.数据集
+
+共8个site，3240张照片
+
+#### B.消融实验
+
+![消融实验详细图片展示](https://user-images.githubusercontent.com/30110832/183235988-f32fc3f0-9151-4c3a-89ce-969d6980c3af.png)
+
+#### C.视频结果
+
+Figure 8是一些视频中帧的截图
+
+
+
+
+
 ### 参考
 
 [0] 主页+代码

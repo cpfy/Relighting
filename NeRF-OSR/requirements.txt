@@ -1,0 +1,5 @@
+
+# 按运行train_trevi_final.sh时顺序整理
+
+tensorboardx==2.1
+configargparse==1.2.3

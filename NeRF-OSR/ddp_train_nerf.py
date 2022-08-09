@@ -425,6 +425,7 @@ def ddp_train_nerf(rank, args):
     setup_logger()
 
     ###### decide chunk size according to gpu memory
+    # 哇！这里超级智能的方法设定batch_size哎
     logger.info('gpu_mem: {}'.format(torch.cuda.get_device_properties(rank).total_memory))
     if torch.cuda.get_device_properties(rank).total_memory / 1e9 > 30:
         logger.info('setting batch size according to 24G gpu')
@@ -644,7 +645,7 @@ def config_parser():
     parser.add_argument("--slurmjob", type=str, default='', help='slurm job id')
     parser.add_argument("--basedir", type=str, default='./logs/', help='where to store ckpts and logs')
 
-    # ablation options
+    # ablation options [消融参数，默认开全部optim]
     parser.add_argument("--use_shadows", type=str2bool, default=True)
     parser.add_argument("--use_shadow_reg", type=str2bool, default=True)
     parser.add_argument("--shadow_reg", type=float, default=0.01, help='shadow regulariser strength')
@@ -658,7 +659,7 @@ def config_parser():
     parser.add_argument("--testskip", type=int, default=8,
                         help='will load 1/N images from test/val sets, useful for large datasets like deepvoxels')
 
-    # model size
+    # model size [模型长、宽、激活函数等信息]
     parser.add_argument("--netdepth", type=int, default=8, help='layers in coarse network')
     parser.add_argument("--netwidth", type=int, default=256, help='channels per layer in coarse network')
     parser.add_argument("--use_viewdirs", action='store_true', help='use full 5D input instead of 3D')
@@ -666,18 +667,19 @@ def config_parser():
 
     parser.add_argument("--with_bg", action='store_true', help='use background network')
 
-    # checkpoints
+    # checkpoints [是否从ckpts开始训练]
     parser.add_argument("--no_reload", action='store_true', help='do not reload weights from saved ckpt')
     parser.add_argument("--ckpt_path", type=str, default=None,
                         help='specific weights npy file to reload for coarse network')
 
-    # batch size
+    # batch size [默认值2048]
+    # 12G+时：512/4096; 4G时：128/1024
     parser.add_argument("--N_rand", type=int, default=32 * 32 * 2,
                         help='batch size (number of random rays per gradient step)')
     parser.add_argument("--chunk_size", type=int, default=1024 * 8,
                         help='number of rays processed in parallel, decrease if running out of memory')
 
-    # iterations
+    # iterations [迭代轮次，默认25w]
     parser.add_argument("--N_iters", type=int, default=250001,
                         help='number of iterations')
 
@@ -685,13 +687,13 @@ def config_parser():
     parser.add_argument("--render_splits", type=str, default='test',
                         help='splits to render')
 
-    # cascade training
+    # cascade training [级联训练？]
     parser.add_argument("--cascade_level", type=int, default=2,
                         help='number of cascade levels')
     parser.add_argument("--cascade_samples", type=str, default='64,64',
                         help='samples at each level')
 
-    # multiprocess learning
+    # multiprocess learning [多个gpu的情况]
     parser.add_argument("--world_size", type=int, default='-1',
                         help='number of processes')
 
@@ -700,14 +702,14 @@ def config_parser():
                         help='optimize autoexposure parameters')
     parser.add_argument("--lambda_autoexpo", type=float, default=1., help='regularization weight for autoexposure')
 
-    # learning rate options
+    # learning rate options [学习率相关参数]
     parser.add_argument("--lrate", type=float, default=5e-4, help='learning rate')
     parser.add_argument("--lrate_decay_factor", type=float, default=0.1,
                         help='decay learning rate by a factor every specified number of steps')
     parser.add_argument("--lrate_decay_steps", type=int, default=5000,
                         help='decay learning rate by a factor every specified number of steps')
 
-    # rendering options
+    # rendering options [渲染参数]
     parser.add_argument("--det", action='store_true', help='deterministic sampling for coarse and fine samples')
     parser.add_argument("--max_freq_log2", type=int, default=10,
                         help='log2 of max freq for positional encoding (3D location)')
@@ -721,7 +723,7 @@ def config_parser():
                         help='number of viewdir embedder frequencies to start annealing from')
     parser.add_argument("--load_min_depth", action='store_true', help='whether to load min depth')
 
-    # logging/saving options
+    # logging/saving options [日志输出参数]
     parser.add_argument("--i_print", type=int, default=100, help='frequency of console printout and metric logging')
     parser.add_argument("--i_img", type=int, default=500, help='frequency of tensorboard image logging')
     parser.add_argument("--i_weights", type=int, default=10000, help='frequency of weight ckpt saving')
@@ -734,17 +736,22 @@ def train():
     args = parser.parse_args()
     if 'SLURM_JOB_ID' in os.environ:
         args.slurmjob = os.environ['SLURM_JOB_ID']
+
+    # <输出> 已测试，此处输出全部config信息
     logger.info(parser.format_values())
 
     if args.world_size == -1:
         args.world_size = torch.cuda.device_count()
         logger.info('Using # gpus: {}'.format(args.world_size))
+
+    # 启动多进程，文档：https://pytorch-cn.readthedocs.io/zh/latest/notes/multiprocessing/
     torch.multiprocessing.spawn(ddp_train_nerf,
                                 args=(args,),
                                 nprocs=args.world_size,
                                 join=True)
 
 
+# train_trevi_final.sh脚本调用的主函数，采用configs中对应的txt文件的配置
 if __name__ == '__main__':
     setup_logger()
     train()
