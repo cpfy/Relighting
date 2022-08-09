@@ -12,9 +12,21 @@
 
 exp_BG-20220806_084655
 
-2、epoch
+2、epoch 2-6
 
 exp_BG-20220806_1454
+
+3、epoch 7-8
+
+train-exp_BG-20220808_0106
+
+4、epoch 8-10
+
+train-exp_BG-20220808_0416
+
+5、epoch 12-15
+
+train-exp_BG-20220808_1452
 
 
 
