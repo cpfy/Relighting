@@ -28,6 +28,10 @@ train-exp_BG-20220808_0416
 
 train-exp_BG-20220808_1452
 
+6、epoc 16-22（—iter 45w）
+
+train-exp_BG-20220809_1452
+
 
 
 #### Epoch 2
