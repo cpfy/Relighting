@@ -8,29 +8,13 @@
 
 #### Detail
 
-1、epoch 0-1（时间5h左右）
-
-exp_BG-20220806_084655
-
-2、epoch 2-6
-
-exp_BG-20220806_1454
-
-3、epoch 7-8
-
-train-exp_BG-20220808_0106
-
-4、epoch 8-10
-
-train-exp_BG-20220808_0416
-
-5、epoch 12-15
-
-train-exp_BG-20220808_1452
-
-6、epoc 16-22（—iter 45w）
-
-train-exp_BG-20220809_1452
+1. epoch 0-1（时间5h左右）：train-exp_BG-20220806_084655
+2. epoch 2-6：train-exp_BG-20220806_1454
+3. epoch 7-8：train-exp_BG-20220808_0106
+4. epoch 8-10：train-exp_BG-20220808_0416
+5. epoch 12-15：train-exp_BG-20220808_1452
+6. epoch 16-22（至iter 45w）：train-exp_BG-20220809_1452
+7. epoch 23-？（至iter 54.6w）：train-exp_BG-20220810_1527
 
 
 
