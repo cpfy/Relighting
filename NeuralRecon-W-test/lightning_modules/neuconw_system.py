@@ -72,6 +72,8 @@ class NeuconWSystem(LightningModule):
         self.embeddings = {}
 
         # todo: remove appearance and transient Embedding if not using
+        # torch.nn.Embedding(): 参数1为embedding dict总个数，参数2为每个embedding vector大小
+        # VOCAB，A的默认值：分别1500，48
         self.embedding_a = torch.nn.Embedding(
             self.config.NEUCONW.N_VOCAB, self.config.NEUCONW.N_A
         )
@@ -380,6 +382,7 @@ class NeuconWSystem(LightningModule):
         with torch.no_grad():
             psnr_ = psnr(results[f"color"], rgbs)
 
+        # 训练时tqdm的log实时显示的信息
         self.log("lr", get_learning_rate(self.optimizer))
         self.log("train/loss", loss)
         for k, v in loss_d.items():

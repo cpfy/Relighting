@@ -174,3 +174,11 @@ hybrid提升准确度；一些优化加速方案
 [7] num_workers、batch_size等参数设置
 
 > https://blog.csdn.net/qq_24407657/article/details/103992170
+
+[8] Eikonal Loss 程函方程（Renderer 773 行左右）
+
+不过貌似不是同一个东西
+
+> https://en.wikipedia.org/wiki/Eikonal_equation
+>
+> https://zh.m.wikipedia.org/zh-hans/%E7%A8%8B%E5%87%BD%E6%96%B9%E7%A8%8B

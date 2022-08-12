@@ -108,6 +108,8 @@ class NeuconWRenderer:
             origin = scene_config["origin"]
             radius = scene_config["radius"]
             self.sfm_to_gt = torch.from_numpy(np.array(scene_config["sfm2gt"]))
+
+        # 从scene_config读取的场景信息
         self.origin = torch.from_numpy(np.array(origin))
         self.radius = radius
 
@@ -155,6 +157,8 @@ class NeuconWRenderer:
 
         return octree_data
 
+    # 利用a_embedded, rgb信息渲染背景，相当于利用color MLP获取体密度、颜色
+    # 与softplus分布有关的透明度alpha，权重weight等
     def render_core_outside(
         self,
         rays_o,
@@ -228,6 +232,7 @@ class NeuconWRenderer:
             "weights": weights,
         }
 
+    # 阶段性保存sample的颜色
     def save_samples_step(self, pts, weights, save_name, dir_name="steps"):
         pts_world = (pts * self.radius).view(-1, 3) + self.origin
 
@@ -255,6 +260,7 @@ class NeuconWRenderer:
             f"samples/{dir_name}/step_{self.save_step_itr}/{save_name}.ply", pcd
         )
 
+    # 升采样？小幅扰动采样点以处理一些复sdf表面
     def up_sample(self, rays_o, rays_d, z_vals, sdf, n_importance, inv_s, step):
         """
         Up sampling give a fixed inv_s
@@ -456,6 +462,7 @@ class NeuconWRenderer:
 
         return voxel_near, voxel_far, ~miss_mask
 
+    # 基于sparse voxel的采样器，将采样统一表示为inverse depth
     def sparse_sampler(self, rays_o, rays_d, near, far, perturb):
         """sample on sparse voxel. Including upsample on sparse voxels,
         and uniform sample on inverse depth of original near far,
@@ -470,6 +477,7 @@ class NeuconWRenderer:
         device = rays_o.device
         batch_size = len(rays_o)
 
+        # default: False
         if self.nerf_far_override:
             if self.octree_data is None:
                 self.octree_data = self.get_octree(device)
@@ -491,11 +499,15 @@ class NeuconWRenderer:
         z_vals = sample_near + (sample_far - sample_near) * z_vals[None, :]
 
         z_vals_outside = None
+
+        # render_bg指渲染背景，默认值：True
+        # n.outside，从0到(no-1)/no生成no个线性等分向量。默认值：32
         if self.render_bg and self.n_outside > 0:
             z_vals_outside = torch.linspace(
                 1e-3, 1.0 - 1.0 / (self.n_outside + 1.0), self.n_outside, device=device
             )
 
+        # neuconw中取perturb默认值=1.0，使此处进入if分支，对z_val作rand扰动
         if perturb > 0:
             t_rand = torch.rand([batch_size, 1], device=device) - 0.5
             z_vals = z_vals + (sample_far - sample_near) * t_rand * 2.0 / self.n_samples
@@ -515,8 +527,9 @@ class NeuconWRenderer:
             )
 
         # upsample inside voxel
+        # 默认值：512
         if self.n_importance > 0:
-            with torch.no_grad():
+            with torch.no_grad():   # 该语句 wrap 起来的部分将不会计算梯度，也不会进行反向传播
                 pts = (
                     rays_o[:, None, :] + rays_d[:, None, :] * z_vals[..., :, None]
                 )  # N_rays, N_samples, 3
@@ -568,6 +581,7 @@ class NeuconWRenderer:
 
         return n_samples, z_vals, z_vals_outside, sample_dist
 
+    # 非环境的物体核心部分渲染
     def render_core(
         self,
         rays_o,
@@ -649,6 +663,7 @@ class NeuconWRenderer:
         sphere_rgb = rgb
 
         # Render with background
+        # 之前的背景渲染通过background_alpha, color, rgb等参数传入，在此处联合渲染
         if background_alpha is not None:
             if self.save_sample:
                 self.itr += 1
@@ -668,6 +683,7 @@ class NeuconWRenderer:
                     self.insiders = torch.cat([self.insiders, inside_pts], dim=0)
                     self.outsiders = torch.cat([self.outsiders, outside_pts], dim=0)
 
+                # 每200iter saving一次利用o3d包与insiders数据生成的.ply
                 if self.itr % 200 == 0:
                     print("Saving samples...")
                     inside_pcd = o3d.geometry.PointCloud()
@@ -690,7 +706,8 @@ class NeuconWRenderer:
                     self.insiders = None
                     self.outsiders = None
 
-            # # print("background processed")
+            # print("background processed")
+            # 各color、alpha按照inside_sphere比例与背景混合
             alpha = alpha * inside_sphere + background_alpha[:, :n_samples] * (
                 1.0 - inside_sphere
             )
@@ -722,6 +739,7 @@ class NeuconWRenderer:
         else:
             color_bg = None
 
+        # 透射率、透明度
         transmittance = torch.cumprod(
             torch.cat(
                 [torch.ones([batch_size, 1], device=device), 1.0 - alpha + 1e-7], -1
@@ -754,7 +772,7 @@ class NeuconWRenderer:
         if background_rgb is not None:  # Fixed background, usually black
             color = color + background_rgb * (1.0 - weights_sum)
 
-        # Eikonal loss
+        # Eikonal loss [程函方程]
         gradient_error = (
             torch.linalg.norm(
                 gradients.reshape(batch_size, n_samples, 3), ord=2, dim=-1
@@ -783,6 +801,7 @@ class NeuconWRenderer:
             "normals": normals,
         }
 
+    # 终极顶层渲染者：render
     def render(
         self,
         rays,
@@ -799,7 +818,7 @@ class NeuconWRenderer:
             self.origin = self.origin.to(device).float()
             self.sfm_to_gt = self.sfm_to_gt.to(device).float()
 
-        # Decompose the inputs
+        # Decompose the inputs（从rays中拆解出参数）
         N_rays = rays.shape[0]
         rays_o, rays_d = rays[:, 0:3], rays[:, 3:6]  # both (N_rays, 3)
         near, far = rays[:, 6:7], rays[:, 7:8]  # both (N_rays, 1)
@@ -811,14 +830,16 @@ class NeuconWRenderer:
 
         # coordinates normalization
         # adjust ray origin to normalized origin
+        # 应该是把ray原点调整到该scene的正面主观察视角
         rays_o = (rays_o - self.origin).float()
-        # adjust to unit sphere
+
+        # adjust to unit sphere [各参数除以radius归一化]
         near = (near / self.radius).float()
         far = (far / self.radius).float()
         rays_o = (rays_o / self.radius).float()
         depth_gt = (depth_gt / self.radius).float()
 
-        a_embedded = self.embeddings["a"](ts)
+        a_embedded = self.embeddings["a"](ts)   # ts为render()传入的第二个参数，大约是随机0-48取一个？
 
         perturb = self.perturb
         if perturb_overwrite >= 0:
@@ -860,6 +881,7 @@ class NeuconWRenderer:
             cos_anneal_ratio=cos_anneal_ratio,
         )
 
+        # 返回一大串dict格式的ret_fine
         color = ret_fine["color"]
         weights = ret_fine["weights"]
         gradients = ret_fine["gradients"]
@@ -867,6 +889,7 @@ class NeuconWRenderer:
         gradient_error = ret_fine["gradient_error"]
         weights_sum = ret_fine["weights_sum"]
 
+        # 计算图像的mask, depth各项error，评估生成质量
         if self.mesh_mask_list is not None:
             mask = torch.ones_like(near)
             for label_name in self.mesh_mask_list:
