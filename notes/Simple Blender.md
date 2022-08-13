@@ -14,6 +14,8 @@
 
 * 开源仓库，但仅为mirror存档状态：https://github.com/blender/blender
 
+* 最重要的Blender手册：https://docs.blender.org/manual
+
 
 
 ### Screenshot
@@ -83,3 +85,55 @@ BG 的 Ground Truth 打开之后只有单一黑色或橘色（选中）
 > **Blender does not support vertex colors on faceless meshes unfortunately.**
 >
 > Well, it already does to some extend (you can convert your point mesh to a pointcloud, you can then use it in geometry nodes, you can instance somthing on the points, you can set radius, even color -- the thing is, there is currently no way to display a color attribute [yet] since the rendering side of pointclouds is still in the works. Also there are still many tools missing for pointclouds, see [T75717: New pointcloud object type](https://developer.blender.org/T75717)
+
+
+
+### Surface Normal Maps
+
+issue中说论文左半灰白原图用MeshLab的 `Ambient Occlusion` 效果实现
+
+右半在Blender中 output surface normals 实现，尝试复现
+
+https://github.com/zju3dv/NeuralRecon-W/issues/2
+
+
+
+#### 烘焙
+
+就是3D属性转化为材质纹理过程，关于UV坐标等
+
+一篇基础的教程：https://zhuanlan.zhihu.com/p/252434138
+
+（写的不好，照着得不到结果）
+
+
+
+另一个标注不错很详细的教程：https://styly.cc/tips/maku-blender-normalmap-bake/
+
+可得到法向烘焙结果
+
+
+
+#### 法向贴图
+
+按上教程所述，之后Shading中添加 `normal map` （法向贴图）节点，并与Image Texture+Principled BSDF连接
+
+<img src="https://styly.cc/wp-content/uploads/2021/03/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2021-03-31-14.24.28-1024x641.png" alt="After applying the Normal Map, the plane is now uneven."  />
+
+
+
+#### 法向2
+
+还发现另一个法向渲染方法
+
+<img src="https://user-images.githubusercontent.com/30110832/184474934-6752a4d3-9fbb-420d-ad23-9d232c15fa6a.png" alt="1660377635" style="zoom: 67%;" />
+
+
+
+### Rendering
+
+只渲染Cube的问题：右上角眼睛与相机同时关闭
+
+#### 结果为Blank
+
+一个很好的逐项排查方案：https://blender.stackexchange.com/questions/53632/render-result-is-completely-blank
