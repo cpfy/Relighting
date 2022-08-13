@@ -72,8 +72,8 @@ DATASET:
   SPLIT: 'train'
 
   PHOTOTOURISM:
-    IMG_DOWNSCALE: 1
-    USE_CACHE: True
+    IMG_DOWNSCALE: 3  # 亲测ds=2只能读取到938/1093；ds=3最高峰时占用14.42G尚可接受
+    USE_CACHE: False   # defaults: True
     CACHE_DIR: 'cache_sgs'
 
 TRAINER:
@@ -86,4 +86,4 @@ TRAINER:
   LR_SCHEDULER: 'none'
   SAVE_DIR: './checkpoints'
   VAL_FREQ: 10000.0
-  SAVE_FREQ: 10000
+  SAVE_FREQ: 2000

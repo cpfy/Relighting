@@ -90,6 +90,7 @@ class PhototourismDataset(Dataset):
             sfm_path = '../neuralsfm'
             depth_percent = 0.4
         elif scene_name in ['lincoln_memorial', 'pantheon_exterior']:
+            sfm_path = '../neuralsfm'   # 原repo未加此行
             depth_percent = 0.0
 
         # sfm深度填充比例？和不同数据集特性有关

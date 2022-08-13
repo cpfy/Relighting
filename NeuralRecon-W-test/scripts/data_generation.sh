@@ -32,8 +32,10 @@ fi
 python tools/prepare_data/prepare_data_cache.py \
 --root_dir $root_dir \
 --dataset_name $dataset_name --cache_dir $cache_dir \
---img_downscale 5 \
+--img_downscale $2 \
 --semantic_map_path semantic_maps --split_to_chunks 64 \
 2>&1|tee log/${jobname}.log
 
 # tee指令用于读取标准输入，将内容输出成文件
+
+# $img_downscale改为从命令行读取，原始值1，BG训练用数据为5

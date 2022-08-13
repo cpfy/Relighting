@@ -67,6 +67,11 @@ class DataModule(pl.LightningDataModule):
             kwargs["with_semantics"] = self.dataset_config.PHOTOTOURISM.WITH_SEMANTICS
         print("Initializing data loaders...")       # <08.01> 此步在ipynb成功执行
 
+        # Print Test
+        # 此处use_cache=True，img_ds=1。sh的参数配置根本就没起作用？
+        print(f"【Output】use cache {self.specific_dataset_config.USE_CACHE}")
+        print(f"【Output】img downscale {self.specific_dataset_config.IMG_DOWNSCALE}")
+
         if self.specific_dataset_config.USE_CACHE:
             if self.specific_dataset_config.IMG_DOWNSCALE == 1:
                 self.train_dataset = self._setup_dataset(
@@ -89,7 +94,7 @@ class DataModule(pl.LightningDataModule):
     def _get_local_split(self, items: list, world_size: int, rank: int, seed: int = 6):
         """The local rank only loads a split of the dataset."""
         n_items = len(items)
-        items_permute = np.random.RandomState(seed).permutation(items)
+        items_permute = np.random.RandomState(seed).permutation(items)  # permutation对item中顺序随机交换
         if n_items % world_size == 0:
             padded_items = items_permute
         else:
@@ -129,6 +134,11 @@ class DataModule(pl.LightningDataModule):
         # )[1]
 
         splits_names = "standard_split_name: STD_NAME"
+
+        # Print Test
+        print(f"【Output】splitnames {splits_names}")
+        print(f"【Output】world size {self.world_size}")
+        print(f"【Output】rank {self.rank}")
 
         local_splits_names = self._get_local_split(
             splits_names, self.world_size, self.rank

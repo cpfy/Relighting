@@ -27,6 +27,7 @@ _CN.NEUCONW.UPDATE_FREQ = 2000
 _CN.NEUCONW.N_VOCAB = 1500
 _CN.NEUCONW.ENCODE_A = True
 _CN.NEUCONW.N_A = 48
+_CN.NEUCONW.N_A = 48
 _CN.NEUCONW.N_STATIC_HEAD = 1
 _CN.NEUCONW.ANNEAL_END = 50000
 
@@ -90,9 +91,10 @@ _CN.DATASET.SPLIT = 'train'
 
 _CN.DATASET.PHOTOTOURISM = CN()
 
-# 改这个参数好像对爆RAM没用？？？奇怪
-_CN.DATASET.PHOTOTOURISM.IMG_DOWNSCALE = 3  # how much to downscale the images for phototourism dataset
-_CN.DATASET.PHOTOTOURISM.USE_CACHE = True  # whether to use ray cache (make sure img_downscale is the same)
+# [BG]改这个参数好像对爆RAM没用？？？奇怪
+# 此处参数会被sh中也有的参数覆盖，修改无用
+_CN.DATASET.PHOTOTOURISM.IMG_DOWNSCALE = 3  # how much to downscale the images for phototourism dataset。defaults：1
+_CN.DATASET.PHOTOTOURISM.USE_CACHE = False  # whether to use ray cache (make sure img_downscale is the same)。defaults: True
 _CN.DATASET.PHOTOTOURISM.CACHE_DIR = 'cache'
 _CN.DATASET.PHOTOTOURISM.CACHE_TYPE = 'npz'
 _CN.DATASET.PHOTOTOURISM.SEMANTIC_MAP_PATH = 'semantic_maps'
