@@ -1,0 +1,15 @@
+key,value
+cfg_path,config/train_lincoln_memorial.yaml
+batch_size,2048
+test_batch_size,512
+chunk,16384
+num_epochs,50
+num_gpus,1
+num_nodes,1
+num_workers,4
+ckpt_path,None
+lr,0.0005
+divide_lr,False
+lr_divisor,5
+exp_name,train-LM-20220813_0233
+refresh_every,1

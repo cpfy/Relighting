@@ -12,7 +12,8 @@ batch_size调回OSR也推荐的12、24G内存GPU用的2048
 
 ### Epoch
 
-1. train-LM-20220813_0233
+1. train-LM-20220813_0233：iter 0-66000
+1. train-LM-20220813_1512：iter 68000-82000
 
 
 

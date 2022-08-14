@@ -182,3 +182,9 @@ hybrid提升准确度；一些优化加速方案
 > https://en.wikipedia.org/wiki/Eikonal_equation
 >
 > https://zh.m.wikipedia.org/zh-hans/%E7%A8%8B%E5%87%BD%E6%96%B9%E7%A8%8B
+
+[9] 关于python的Dunder Methods
+
+> https://www.tutorialsteacher.com/python/magic-methods-in-python
+>
+> https://zhuanlan.zhihu.com/p/344951719
