@@ -77,6 +77,7 @@ def gen_grid_spc(scene_config, data_path, eval_level, device=0):
     up_level = eval_level - octree_level
     up_times = 2 ** up_level
 
+    # <输出>此语句完成后开始tcmalloc并撑爆RAM
     eval_dim = int(low_dim * (2 ** up_level))
     print(f"evaluation dim: {eval_level}, upsampled {up_times} times, original dim {low_dim}, sparse num {sparse_num}")
 
@@ -123,7 +124,7 @@ if __name__ == "__main__":
     num_gpus = 1
 
     print('number of gpus: {}'.format(num_gpus))
-    args.DISTRIBUTED = num_gpus > 0
+    args.DISTRIBUTED = num_gpus > 0     # 不应当>0即分布式。报错未初始化，改回0
 
     if args.DISTRIBUTED:
         torch.cuda.set_device(args.local_rank)

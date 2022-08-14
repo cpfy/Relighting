@@ -571,3 +571,56 @@ torch==1.12.0的bug，见：https://github.com/pytorch/pytorch/issues/80809
 
 
 
+（08.13更新）
+
+#### LM的mesh生成问题
+
+运行正常的mesh时
+
+```
+!sh scripts/sdf_extract.sh LM checkpoints/train-LM-20220813_0233/config/train_lincoln_memorial.yaml checkpoints/train-LM-20220813_0233/iter_50000.ckpt 10
+```
+
+直接一串torch.distributed报错，检查半天应该是RAM占满被SIGKILL导致
+
+```
+ERROR:torch.distributed.elastic.multiprocessing.api:failed (exitcode: -9) local_rank: 0 (pid: 2277) of binary: /usr/bin/python3
+Traceback (most recent call last):
+  File "/usr/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/usr/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/usr/local/lib/python3.7/dist-packages/torch/distributed/launch.py", line 193, in <module>
+    main()
+  File "/usr/local/lib/python3.7/dist-packages/torch/distributed/launch.py", line 189, in main
+    launch(args)
+  File "/usr/local/lib/python3.7/dist-packages/torch/distributed/launch.py", line 174, in launch
+    run(args)
+  File "/usr/local/lib/python3.7/dist-packages/torch/distributed/run.py", line 755, in run
+    )(*cmd_args)
+  File "/usr/local/lib/python3.7/dist-packages/torch/distributed/launcher/api.py", line 131, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/usr/local/lib/python3.7/dist-packages/torch/distributed/launcher/api.py", line 247, in launch_agent
+    failures=result.failures,
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+=====================================================
+tools/extract_mesh.py FAILED
+-----------------------------------------------------
+```
+
+
+
+tcmalloc申请内存太多，也是一个colab常见问题
+
+其中一个解决方案如下，不过貌似用处不大：https://github.com/googlecolab/colabtools/issues/2774#issuecomment-1112359792
+
+即，开头加入
+
+```python
+import os
+os.environ.pop('LD_PRELOAD', None)
+```
+
+
+
+通过降低 `eval_level` 从10到9解决
