@@ -130,6 +130,12 @@ https://github.com/zju3dv/NeuralRecon-W/issues/2
 
 
 
+该结果与Shading中 **法线贴图** 效果基本一致
+
+
+
+
+
 ### Rendering
 
 只渲染Cube的问题：右上角眼睛与相机同时关闭
