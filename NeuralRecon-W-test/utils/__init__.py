@@ -86,6 +86,8 @@ def extract_model_state_dict(ckpt_path, model_name='model', prefixes_to_ignore=[
             checkpoint_[k] = v
     return checkpoint_
 
+# 与nerf_pl比较阅读可发现：变化之处就是多加了个strict参数、调整了下代码顺序、添加warning错误输出
+# 经典且重要的加载ckpt函数
 def load_ckpt(model, ckpt_path, model_name='model', prefixes_to_ignore=[], strict=True):
     checkpoint_ = extract_model_state_dict(ckpt_path, model_name, prefixes_to_ignore)
     

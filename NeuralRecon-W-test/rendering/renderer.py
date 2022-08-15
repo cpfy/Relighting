@@ -972,6 +972,8 @@ class NeuconWRenderer:
         sdf = self.neuconw.sdf(pts)
         return sdf
 
+    # 灯灯灯灯！此即吾所亟之函数！
+    # sdf_extract调用sdf(), rgb调用这个封装好的rgb()即可嘿嘿嘿
     def rgb(self, pts, rays_d, a_embedded):
         num_points, _, _ = pts.size()
 

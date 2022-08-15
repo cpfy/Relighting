@@ -47,3 +47,33 @@ data/heritage-recon/brandenburg_gate/
 #### Q4
 
 数据集编号不匹配，估计neuconw删了一些，不知道咋解决使得对应上
+
+
+
+### 系列2
+
+> In NeuralRecon-W复现时的一些问题
+
+#### Q1
+
+相应调用 `from rendering.renderer import *` 时，关于kaolin报错：
+
+```
+/content/drive/MyDrive/NeuralRecon-W-test/tools/prepare_data/generate_voxel.py in <module>()
+     11 import os
+     12 from utils.colmap_utils import read_points3d_binary
+---> 13 from kaolin.ops import spc
+     14 import kaolin.render.spc as spc_render
+     15 import yaml
+
+ModuleNotFoundError: No module named 'kaolin.ops'
+```
+
+
+
+真离谱，原来是没有restart runtime？？？？？？？
+
+
+
+#### Q2
+

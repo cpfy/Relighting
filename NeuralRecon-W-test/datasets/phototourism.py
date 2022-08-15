@@ -28,6 +28,7 @@ skip = 1
 
 
 # 旅游照片集：关于数据读取、处理
+# 好家伙，原来这个是从nerf_pl的nerfw分支下面同名文件夹+文件改的
 class PhototourismDataset(Dataset):
     def __init__(
         self,
@@ -80,7 +81,7 @@ class PhototourismDataset(Dataset):
 
         self.scene_origin = scene_origin
         self.scene_radius = scene_radius
-        
+
         # hard code sfm depth padding
         scene_name = self.root_dir.rsplit('/')[-1]
         if scene_name == 'brandenburg_gate':
@@ -92,13 +93,17 @@ class PhototourismDataset(Dataset):
         elif scene_name in ['lincoln_memorial', 'pantheon_exterior']:
             sfm_path = '../neuralsfm'   # 原repo未加此行
             depth_percent = 0.0
+        else:
+            sfm_path = '../neuralsfm'
+            depth_percent = 0.0     # <修改>防止depth_percent未赋值就使用。如非训练or非四场景or仅评估ckpt情况会使用
 
         # sfm深度填充比例？和不同数据集特性有关
+        # 与nerf_pl比较文学可知，仅train、eval状态且不使用cache会用到此参数
         self.depth_percent = depth_percent
 
         # 3D点云
         self.sfm_path = sfm_path
-        
+
         print(f"reading sfm result from {self.sfm_path}...")    # [输出]尝试读取sfm数据
 
         # Setup cache
@@ -768,6 +773,7 @@ class PhototourismDataset(Dataset):
             return self.val_num
         return len(self.poses_test)     # 此时为test类别
 
+    # 类似dataset[5]这种取值时的对应操作
     def __getitem__(self, idx):
         if self.split == "train":  # use data in the buffers
 
@@ -792,6 +798,7 @@ class PhototourismDataset(Dataset):
                     (self.all_rays[idx, :8], self.all_rays[idx, 9:12]), dim=-1
                 )
 
+        # 这是相比nerf_pl新加的，大概率evaluate sdf用
         elif self.split == "eval":
             w, h = self.img_wh[idx]
             all_rays = self.all_rays[idx].reshape(h, w, -1)
@@ -815,6 +822,8 @@ class PhototourismDataset(Dataset):
                 "img_wh": self.img_wh[idx],
                 "image_name": self.eval_images[idx],
             }
+
+        # nerf_pl原本评估ckpt用"test_train"这个split
         elif self.split in ["val", "test_train"]:
             sample = {}
             if self.split == "val":
