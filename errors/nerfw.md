@@ -54,9 +54,11 @@ data/heritage-recon/brandenburg_gate/
 
 > In NeuralRecon-W复现时的一些问题
 
+
+
 #### Q1
 
-相应调用 `from rendering.renderer import *` 时，关于kaolin报错：
+相应调用 `from rendering.renderer import *` 时，关于 `kaolin` 报错：
 
 ```
 /content/drive/MyDrive/NeuralRecon-W-test/tools/prepare_data/generate_voxel.py in <module>()
@@ -76,4 +78,32 @@ ModuleNotFoundError: No module named 'kaolin.ops'
 
 
 #### Q2
+
+在对 `dataset` 进行 `__getitem__()` 时，路径变为 `None` 找不到报错
+
+```
+【Output】image path id is 62
+【Output】image name is 04800984_8342094434
+---------------------------------------------------------------------------
+FileNotFoundError                         Traceback (most recent call last)
+<ipython-input-8-dda7e836ad8c> in <module>()
+      1 # 默认参数5，实际随便取，就是图像编号id
+----> 2 sample = dataset[51]
+      3 rays = sample['rays'].cuda()
+...
+
+FileNotFoundError: [Errno 2] No such file or directory: 'data/heritage-recon/brandenburg_gate/None/04800984_8342094434.npz'
+```
+
+
+
+观察可知，在 `phototourism.py` 读取semantic_map一行时， `self.semantic_map_path` 初始化时默认为 `None` 导致的
+
+```python
+semantic_map = np.load(
+	os.path.join(
+		self.root_dir, f"{self.semantic_map_path}/{image_name}.npz"
+	)
+)["arr_0"]
+```
 

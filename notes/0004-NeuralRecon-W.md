@@ -188,3 +188,13 @@ hybrid提升准确度；一些优化加速方案
 > https://www.tutorialsteacher.com/python/magic-methods-in-python
 >
 > https://zhuanlan.zhihu.com/p/344951719
+
+[10] `utils/init.py` 中的对模型存储字典读取
+
+> https://zhuanlan.zhihu.com/p/98563721
+
+[11] `datasets/mask_utils.py` 中的分类数据ade20k介绍（MIT出品必属精品）
+
+> https://blog.csdn.net/qq_41185868/article/details/100511366
+>
+> Origin：https://groups.csail.mit.edu/vision/datasets/ADE20K/

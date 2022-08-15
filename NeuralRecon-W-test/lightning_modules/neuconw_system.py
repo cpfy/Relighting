@@ -165,6 +165,7 @@ class NeuconWSystem(LightningModule):
         items.pop("v_num", None)
         return items
 
+    # 本函数基于nerf_pl中的eval.py的batched_inference改写，原函数using chunk
     def forward(self, rays, ts, label):
         """Do batched inference on rays"""
         results = defaultdict(list)

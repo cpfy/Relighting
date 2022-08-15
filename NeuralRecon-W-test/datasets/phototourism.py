@@ -31,24 +31,24 @@ skip = 1
 # 好家伙，原来这个是从nerf_pl的nerfw分支下面同名文件夹+文件改的
 class PhototourismDataset(Dataset):
     def __init__(
-        self,
-        root_dir,
-        split="train",
-        img_downscale=1,
-        val_num=1,
-        use_cache=False,
-        cache_paths=["cache"],
-        split_path="",
-        semantic_map_path=None,
-        with_semantics=True,
-        use_voxel=True,
-        scene_origin=None,
-        scene_radius=None,
-        shared_cache=False,
-        shared_rays_base=None,
-        shared_rgbs_base=None,
-        all_rays_shape=None,
-        all_rgbs_shape=None,
+            self,
+            root_dir,
+            split="train",
+            img_downscale=1,
+            val_num=1,
+            use_cache=False,
+            cache_paths=["cache"],
+            split_path="",
+            semantic_map_path=None,
+            with_semantics=True,
+            use_voxel=True,
+            scene_origin=None,
+            scene_radius=None,
+            shared_cache=False,
+            shared_rays_base=None,
+            shared_rgbs_base=None,
+            all_rays_shape=None,
+            all_rgbs_shape=None,
     ):
         """
         img_downscale: how much scale to downsample the training images.
@@ -68,7 +68,7 @@ class PhototourismDataset(Dataset):
 
         # 图像W、H降低规模的倍率，原始d=1在BG上将消耗40G内存？！
         assert (
-            img_downscale >= 1
+                img_downscale >= 1
         ), "image can only be downsampled, please set img_downscale>=1!"
         self.img_downscale = img_downscale
         if split == "val":  # image downscale=1 will cause OOM in val mode
@@ -76,7 +76,7 @@ class PhototourismDataset(Dataset):
         self.val_num = max(1, val_num)  # at least 1
         self.define_transforms()
         self.white_back = False
-        self.semantic_map_path = semantic_map_path      #todo 语义映射？后文读取npz用
+        self.semantic_map_path = semantic_map_path  # 语义地图映射的路径，后文读取npz用
         self.with_semantics = with_semantics
 
         self.scene_origin = scene_origin
@@ -91,11 +91,11 @@ class PhototourismDataset(Dataset):
             sfm_path = '../neuralsfm'
             depth_percent = 0.4
         elif scene_name in ['lincoln_memorial', 'pantheon_exterior']:
-            sfm_path = '../neuralsfm'   # 原repo未加此行
+            sfm_path = '../neuralsfm'  # 原repo未加此行
             depth_percent = 0.0
         else:
             sfm_path = '../neuralsfm'
-            depth_percent = 0.0     # <修改>防止depth_percent未赋值就使用。如非训练or非四场景or仅评估ckpt情况会使用
+            depth_percent = 0.0  # <修改>防止depth_percent未赋值就使用。如非训练or非四场景or仅评估ckpt情况会使用
 
         # sfm深度填充比例？和不同数据集特性有关
         # 与nerf_pl比较文学可知，仅train、eval状态且不使用cache会用到此参数
@@ -104,7 +104,7 @@ class PhototourismDataset(Dataset):
         # 3D点云
         self.sfm_path = sfm_path
 
-        print(f"reading sfm result from {self.sfm_path}...")    # [输出]尝试读取sfm数据
+        print(f"reading sfm result from {self.sfm_path}...")  # [输出]尝试读取sfm数据
 
         # Setup cache
         self.use_cache = use_cache
@@ -113,9 +113,9 @@ class PhototourismDataset(Dataset):
         # sparse_voxel
         self.octree_data = None
         self.use_voxel = use_voxel
-        self.use_voxel = False      #todo [修改]可能这里导致了额外一步mask，使all_rays维度出现问题
+        self.use_voxel = False  # todo [修改]可能这里导致了额外一步mask，使all_rays维度出现问题
         if self.use_voxel and not self.use_cache and self.split == "train":
-            print("Note: training near far will generate from sparse voxel!!!!")    # [输出] 显然train时出现了这一问题
+            print("Note: training near far will generate from sparse voxel!!!!")  # [输出] 显然train时出现了这一问题
 
         self.cache_paths = cache_paths
         self.shared_cache = shared_cache
@@ -123,7 +123,7 @@ class PhototourismDataset(Dataset):
         # 默认为False，不用管，可能是multi gpus用到
         if shared_cache:
             assert (
-                shared_rgbs_base is not None
+                    shared_rgbs_base is not None
             ), f"Empty shared array at rank {torch.distributed.get_rank()}"
             shared_array_rgb = np.ctypeslib.as_array(
                 shared_rgbs_base.get_obj()
@@ -165,15 +165,15 @@ class PhototourismDataset(Dataset):
 
     # 返回每张图片的深度、权重（衡量图像数据有效性/质量）、归一化的方向向量
     def get_colmap_depth(
-        self,
-        img_p3d_all,
-        img_2d_all,
-        img_err_all,
-        pose,
-        intrinsic,
-        img_w,
-        img_h,
-        device=0,
+            self,
+            img_p3d_all,
+            img_2d_all,
+            img_err_all,
+            pose,
+            intrinsic,
+            img_w,
+            img_h,
+            device=0,
     ):
         # return depth and weights for each image
         # calculate normalize factor
@@ -201,10 +201,10 @@ class PhototourismDataset(Dataset):
 
         img_2d_all = torch.round(img_2d_all).long()  # (width, height)
         valid_mask = (
-            (img_2d_all[:, 0] >= 0)
-            & (img_2d_all[:, 0] < img_w)
-            & (img_2d_all[:, 1] >= 0)
-            & (img_2d_all[:, 1] < img_h)
+                (img_2d_all[:, 0] >= 0)
+                & (img_2d_all[:, 0] < img_w)
+                & (img_2d_all[:, 1] >= 0)
+                & (img_2d_all[:, 1] < img_h)
         )
 
         img_2d = img_2d_all[valid_mask]
@@ -219,7 +219,7 @@ class PhototourismDataset(Dataset):
         projected = intrinsic @ extrinsic[:3] @ img_p3d.T
 
         depth = projected[2, :]
-        weight = 2 * torch.exp(-((img_err / Err_mean) ** 2))    # 错误比率大的图片分配权重指数级小
+        weight = 2 * torch.exp(-((img_err / Err_mean) ** 2))  # 错误比率大的图片分配权重指数级小
 
         depth_all[img_2d[:, 1], img_2d[:, 0]] = depth
         weights_all[img_2d[:, 1], img_2d[:, 0]] = weight
@@ -307,8 +307,8 @@ class PhototourismDataset(Dataset):
             for i in tqdm(range(0, rays_o.size()[0], chunk_size)):
                 # generate near far from spc
                 voxel_near_sfm, voxel_far_sfm = get_near_far(
-                    rays_o[i : i + chunk_size],
-                    rays_d[i : i + chunk_size],
+                    rays_o[i: i + chunk_size],
+                    rays_d[i: i + chunk_size],
                     octree,
                     octree_origin,
                     octree_scale,
@@ -320,8 +320,8 @@ class PhototourismDataset(Dataset):
                 voxel_far_sfm_all.append(voxel_far_sfm.cpu())
         except Exception as e:
             e.args = (
-                "This probably due to chunk_size too big, consider lower value! Original message:\n"
-                + e.args
+                    "This probably due to chunk_size too big, consider lower value! Original message:\n"
+                    + e.args
             )
             raise
 
@@ -463,11 +463,11 @@ class PhototourismDataset(Dataset):
             self.nears, self.fars = {}, {}  # {id_: distance}
             for i, id_ in enumerate(self.img_ids):
                 xyz_cam_i = (xyz_world_h @ w2c_mats[i].T)[
-                    :, :3
-                ]  # xyz in the ith cam coordinate
+                            :, :3
+                            ]  # xyz in the ith cam coordinate
                 xyz_cam_i = xyz_cam_i[
                     xyz_cam_i[:, 2] > 0
-                ]  # filter out points that lie behind the cam
+                    ]  # filter out points that lie behind the cam
                 if self.scene_origin is not None:
                     scene_origin_h = np.concatenate(
                         [self.scene_origin, np.ones(1)], -1
@@ -487,10 +487,10 @@ class PhototourismDataset(Dataset):
             # Step 5. split the img_ids (the number of images is verified to match that in the paper)
             # training will use all images
             self.img_ids_train = [
-                id_
-                for i, id_ in enumerate(self.img_ids)
-                if not self.files.loc[i, "split"] == "test"
-            ][::skip]
+                                     id_
+                                     for i, id_ in enumerate(self.img_ids)
+                                     if not self.files.loc[i, "split"] == "test"
+                                 ][::skip]
             self.img_ids_test = [
                 id_
                 for i, id_ in enumerate(self.img_ids)
@@ -703,22 +703,24 @@ class PhototourismDataset(Dataset):
                     # rays是[ray_o, ray_d, ..., depth, weight]等一大串拼起来
                     if self.depth_percent > 0:
                         valid_depth = rays[:, -2] > 0
-                        if not valid_depth.any():   # [Solve]官方的除0报错解决方案
+                        if not valid_depth.any():  # [Solve]官方的除0报错解决方案
                             continue
 
-                        valid_num = torch.sum(valid_depth).long().item()    # torch.Tensor.item(): 返回单个元素张量的值
+                        valid_num = torch.sum(valid_depth).long().item()  # torch.Tensor.item(): 返回单个元素张量的值
                         current_len = rays.size()[0]
 
                         # 原写法除0报错: current_percent = valid_num / current_len
                         if current_len == 0:
                             current_percent = 2.22222
                         else:
-                            current_percent = valid_num / current_len    # [报错]运行时有一个ZeroDivision报错
+                            current_percent = valid_num / current_len  # [报错]运行时有一个ZeroDivision报错
 
                         # 例如，对BG：pad_len = (0.2*len-?)/0.8
                         # 一般是个5w-15w之间的数
-                        padding_length = int(np.ceil((self.depth_percent * current_len - valid_num) / (1 - self.depth_percent)))
-                        print(f"padding valid depth percentage: from {current_percent} to {self.depth_percent} with padding {padding_length}")
+                        padding_length = int(
+                            np.ceil((self.depth_percent * current_len - valid_num) / (1 - self.depth_percent)))
+                        print(
+                            f"padding valid depth percentage: from {current_percent} to {self.depth_percent} with padding {padding_length}")
 
                         pad_ind = torch.floor((torch.rand(padding_length) * valid_num)).long()
                         result_length = padding_length + current_len
@@ -733,23 +735,24 @@ class PhototourismDataset(Dataset):
                         paddings_rgbs = img[valid_depth, :][pad_ind]
                         img = torch.cat([img, paddings_rgbs], dim=0)[result_ind]
 
-                        test_ind =  torch.floor((torch.rand(1024) * result_length)).long()
+                        test_ind = torch.floor((torch.rand(1024) * result_length)).long()
 
                         # [报错]原写法除0报错: print(f"sample depth percent after padding: {torch.sum(rays[test_ind, -2] > 0) / rays[test_ind].size()[0]}")
                         if current_len == 0 or rays[test_ind].size()[0] == 0:
                             print("Find One Zero Division.")
                         else:
-                            print(f"sample depth percent after padding: {torch.sum(rays[test_ind, -2] > 0) / rays[test_ind].size()[0]}")
+                            print(
+                                f"sample depth percent after padding: {torch.sum(rays[test_ind, -2] > 0) / rays[test_ind].size()[0]}")
 
                     self.all_rgbs += [img]
                     self.all_rays += [rays]
-                    print(f"【Size：rays】{rays.size()}")              # [输出]size = [8538,12]
-                    print(f"【Len：all_rays】{len(self.all_rays)}")   # [报错]这是一个list，无法使用.size()方法
+                    print(f"【Size：rays】{rays.size()}")  # [输出]size = [8538,12]
+                    print(f"【Len：all_rays】{len(self.all_rays)}")  # [报错]这是一个list，无法使用.size()方法
 
                 # 如此重要的修正Tensor shape一行，哪个给注释了？？？导致train的shape一直报错
                 if self.split == 'train':
-                    self.all_rays = torch.cat(self.all_rays, 0) # ((N_images-1)*h*w, 10)
-                    self.all_rgbs = torch.cat(self.all_rgbs, 0) # ((N_images-1)*h*w, 3)
+                    self.all_rays = torch.cat(self.all_rays, 0)  # ((N_images-1)*h*w, 10)
+                    self.all_rgbs = torch.cat(self.all_rgbs, 0)  # ((N_images-1)*h*w, 3)
 
         elif self.split in [
             "val",
@@ -771,7 +774,7 @@ class PhototourismDataset(Dataset):
             return self.N_images_train
         if self.split == "val":
             return self.val_num
-        return len(self.poses_test)     # 此时为test类别
+        return len(self.poses_test)  # 此时为test类别
 
     # 类似dataset[5]这种取值时的对应操作
     def __getitem__(self, idx):
@@ -784,7 +787,7 @@ class PhototourismDataset(Dataset):
             # print(f"【Out】Len of all_rays = {len(self.all_rays)}")   # [输出]184/263等，修复正确后恒为2333642
 
             sample = {
-                "rays": self.all_rays[idx, :8],     # [报错]list indices must be integers or slices, not tuple
+                "rays": self.all_rays[idx, :8],  # [报错]list indices must be integers or slices, not tuple
                 "ts": self.all_rays[idx, 8].long(),
                 "rgbs": self.all_rgbs[idx],
             }
@@ -804,9 +807,9 @@ class PhototourismDataset(Dataset):
             all_rays = self.all_rays[idx].reshape(h, w, -1)
             all_rgbs = self.all_rgbs[idx].reshape(h, w, -1)
             left_rays = all_rays[:, : w // 2].reshape(-1, 9)
-            right_rays = all_rays[:, w // 2 :].reshape(-1, 9)
+            right_rays = all_rays[:, w // 2:].reshape(-1, 9)
             left_rgbs = all_rgbs[:, : w // 2].reshape(-1, 3)
-            right_rgbs = all_rgbs[:, w // 2 :].reshape(-1, 3)
+            right_rgbs = all_rgbs[:, w // 2:].reshape(-1, 3)
             sample = {
                 "rays": self.all_rays[idx][:, :8],
                 "ts": self.all_rays[idx][:, 8].long(),
@@ -823,7 +826,7 @@ class PhototourismDataset(Dataset):
                 "image_name": self.eval_images[idx],
             }
 
-        # nerf_pl原本评估ckpt用"test_train"这个split
+        # nerf_pl原本评估ckpt用"test_train"这个split，仅新增image_name变量改动
         elif self.split in ["val", "test_train"]:
             sample = {}
             if self.split == "val":
@@ -847,7 +850,10 @@ class PhototourismDataset(Dataset):
             directions = get_ray_directions(img_h, img_w, self.Ks[id_])
             rays_o, rays_d = get_rays(directions, c2w)
 
-            image_name = self.image_paths[id_].split(".")[0]
+            image_name = self.image_paths[id_].split(".")[0]  # 相比pl新增改动，给semaitic_map找npz用
+
+            print(f"【Output】image path id is {id_}")    # id_和dataset[x]这两个数居然不是同一个东西
+            print(f"【Output】image name is {image_name}")    # 可正确取到图像文件名
 
             rays = torch.cat(
                 [
@@ -861,6 +867,11 @@ class PhototourismDataset(Dataset):
             sample["rays"] = rays
             sample["ts"] = id_ * torch.ones(len(rays), dtype=torch.long)
             if self.with_semantics:
+                #todo <修改>强制覆盖semantic_map_path不为None，使用的为defaults中参数
+                if self.semantic_map_path is None:
+                    self.semantic_map_path = 'semantic_maps'
+
+                # <报错>迁移复现时self.semantic_map_path变为None
                 semantic_map = np.load(
                     os.path.join(
                         self.root_dir, f"{self.semantic_map_path}/{image_name}.npz"

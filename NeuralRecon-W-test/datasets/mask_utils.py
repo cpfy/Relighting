@@ -5,6 +5,8 @@ def get_class_ids_from_labels(labels):
         ids.append(label_id_mapping_ade20k[l])
     return ids
 
+# 好高级的用法，mask居然还有这么多种类型
+# ADE20k是一个开放字典标签集密集注释数据集
 def get_label_id_mapping():
     return label_id_mapping_ade20k
 

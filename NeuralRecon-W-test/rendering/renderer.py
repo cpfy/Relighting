@@ -802,6 +802,7 @@ class NeuconWRenderer:
         }
 
     # 终极顶层渲染者：render
+    # 相比pl新增label参数，仅在计算mask与floor loss用到，在ade20k分类中随便填一个就行
     def render(
         self,
         rays,
