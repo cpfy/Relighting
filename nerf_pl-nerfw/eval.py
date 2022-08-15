@@ -77,6 +77,7 @@ def get_opts():
     return parser.parse_args()
 
 
+# 利用批处理做一次推断
 @torch.no_grad()
 def batched_inference(models, embeddings,
                       rays, ts, N_samples, N_importance, use_disp,
@@ -120,7 +121,7 @@ if __name__ == "__main__":
     else:
         kwargs['img_downscale'] = args.img_downscale
         kwargs['use_cache'] = args.use_cache
-    dataset = dataset_dict[args.dataset_name](**kwargs)
+    dataset = dataset_dict[args.dataset_name](**kwargs)     # 从data/数据集文件夹里取
     scene = os.path.basename(args.root_dir.strip('/'))
 
     embedding_xyz = PosEmbedding(args.N_emb_xyz-1, args.N_emb_xyz)
@@ -168,6 +169,7 @@ if __name__ == "__main__":
                                    [0,                  0,                    1]])
         if scene == 'brandenburg_gate':
             # select appearance embedding, hard-coded for each scene
+            # 选取特定图片比较好的appearance embedding，这个图很完整
             dataset.test_appearance_idx = 1123 # 85572957_6053497857.jpg
             N_frames = 30*4
             dx = np.linspace(0, 0.03, N_frames)
