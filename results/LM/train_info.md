@@ -14,6 +14,9 @@ batch_size调回OSR也推荐的12、24G内存GPU用的2048
 
 1. train-LM-20220813_0233：iter 0-66000
 1. train-LM-20220813_1512：iter 68000-82000
+1. train-LM-20220814_0222：8.4w-19.4w
+1. train-LM-20220815_0218：19.6w-23.2w
+1. train-LM-20220815_1450：23.4w-30w
 
 
 
@@ -47,5 +50,15 @@ batch_size调回OSR也推荐的12、24G内存GPU用的2048
 
 ```
 Epoch 0:   1%|          | 832/90461 [06:50<12:16:43,  2.03it/s, loss=0.474, train/color_loss=0.317, train/normal_loss=0.00289, train/mask_error=0.154, train/psnr=16.60]
+```
+
+
+
+最后的epoch5（iter30w）
+
+```
+sdf filtered points 5165446, max sdf: -0.3522343039512634, min sdf: 0.27973219752311707
+Update successful!!
+Epoch 5:  76%|███████▌  | 68630/90461 [19:41:15<6:15:45,  1.03s/it, loss=0.237, train/color_loss=0.0803, train/normal_loss=0.00123, train/mask_error=0.143, train/psnr=25.10, val/psnr=15.70]
 ```
 
