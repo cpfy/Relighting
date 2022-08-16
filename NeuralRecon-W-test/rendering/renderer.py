@@ -50,30 +50,30 @@ def sample_pdf(bins, weights, n_samples, det=False):
 
 class NeuconWRenderer:
     def __init__(
-        self,
-        nerf,
-        neuconw,
-        embeddings,
-        n_samples,
-        n_importance,
-        n_outside,
-        up_sample_steps,
-        perturb,
-        origin,
-        radius,
-        s_val_base=0,
-        spc_options=None,
-        sample_range=None,
-        boundary_samples=None,
-        nerf_far_override=False,
-        render_bg=True,
-        trim_sphere=True,
-        save_sample=False,
-        save_step_sample=False,
-        mesh_mask_list=None,
-        floor_normal=False,
-        depth_loss=False,
-        floor_labels=None,
+            self,
+            nerf,
+            neuconw,
+            embeddings,
+            n_samples,
+            n_importance,
+            n_outside,
+            up_sample_steps,
+            perturb,
+            origin,
+            radius,
+            s_val_base=0,
+            spc_options=None,
+            sample_range=None,
+            boundary_samples=None,
+            nerf_far_override=False,
+            render_bg=True,
+            trim_sphere=True,
+            save_sample=False,
+            save_step_sample=False,
+            mesh_mask_list=None,
+            floor_normal=False,
+            depth_loss=False,
+            floor_labels=None,
     ):
 
         self.nerf = nerf
@@ -102,6 +102,8 @@ class NeuconWRenderer:
 
         # read unit sphere origin and radius from scene config
         scene_config_path = os.path.join(spc_options["reconstruct_path"], "config.yaml")
+        print(f"【Output】scene_config_path = {scene_config_path}")
+
         if os.path.isfile(scene_config_path):
             with open(scene_config_path, "r") as yamlfile:
                 scene_config = yaml.load(yamlfile, Loader=yaml.FullLoader)
@@ -160,14 +162,14 @@ class NeuconWRenderer:
     # 利用a_embedded, rgb信息渲染背景，相当于利用color MLP获取体密度、颜色
     # 与softplus分布有关的透明度alpha，权重weight等
     def render_core_outside(
-        self,
-        rays_o,
-        rays_d,
-        z_vals,
-        sample_dist,
-        nerf,
-        background_rgb=None,
-        a_embedded=None,
+            self,
+            rays_o,
+            rays_d,
+            z_vals,
+            sample_dist,
+            nerf,
+            background_rgb=None,
+            a_embedded=None,
     ):
         """
         Render background
@@ -183,7 +185,7 @@ class NeuconWRenderer:
 
         # Section midpoints
         pts = (
-            rays_o[:, None, :] + rays_d[:, None, :] * mid_z_vals[..., :, None]
+                rays_o[:, None, :] + rays_d[:, None, :] * mid_z_vals[..., :, None]
         )  # batch_size, n_samples, 3
 
         dis_to_center = torch.linalg.norm(pts, ord=2, dim=-1, keepdim=True).clip(
@@ -200,8 +202,8 @@ class NeuconWRenderer:
 
         a_embedded_expand = (
             a_embedded[:, None, :]
-            .expand(batch_size, n_samples, -1)
-            .reshape(dirs.size()[0], -1)
+                .expand(batch_size, n_samples, -1)
+                .reshape(dirs.size()[0], -1)
             if a_embedded is not None
             else None
         )
@@ -212,13 +214,13 @@ class NeuconWRenderer:
         )
         alpha = alpha.reshape(batch_size, n_samples)
         weights = (
-            alpha
-            * torch.cumprod(
-                torch.cat(
-                    [torch.ones([batch_size, 1], device=device), 1.0 - alpha + 1e-7], -1
-                ),
-                -1,
-            )[:, :-1]
+                alpha
+                * torch.cumprod(
+            torch.cat(
+                [torch.ones([batch_size, 1], device=device), 1.0 - alpha + 1e-7], -1
+            ),
+            -1,
+        )[:, :-1]
         )
         sampled_color = sampled_color.reshape(batch_size, n_samples, 3)
         color = (weights[:, :, None] * sampled_color).sum(dim=1)
@@ -268,7 +270,7 @@ class NeuconWRenderer:
         device = sdf.device
         batch_size, n_samples = z_vals.shape
         pts = (
-            rays_o[:, None, :] + rays_d[:, None, :] * z_vals[..., :, None]
+                rays_o[:, None, :] + rays_d[:, None, :] * z_vals[..., :, None]
         )  # n_rays, n_samples, 3
         radius = torch.linalg.norm(pts, ord=2, dim=-1, keepdim=False)
         inside_sphere = (radius[:, :-1] < 1.0) | (radius[:, 1:] < 1.0)
@@ -309,13 +311,13 @@ class NeuconWRenderer:
         # transient alpha
         # alpha = alpha_s + alpha_t
         weights = (
-            alpha
-            * torch.cumprod(
-                torch.cat(
-                    [torch.ones([batch_size, 1], device=device), 1.0 - alpha + 1e-7], -1
-                ),
-                -1,
-            )[:, :-1]
+                alpha
+                * torch.cumprod(
+            torch.cat(
+                [torch.ones([batch_size, 1], device=device), 1.0 - alpha + 1e-7], -1
+            ),
+            -1,
+        )[:, :-1]
         )
 
         z_samples = sample_pdf(z_vals, weights, n_importance, det=True).detach()
@@ -361,8 +363,8 @@ class NeuconWRenderer:
             sdf = torch.cat([sdf, new_sdf], dim=-1)
             xx = (
                 torch.arange(batch_size)[:, None]
-                .expand(batch_size, n_samples + n_importance)
-                .reshape(-1)
+                    .expand(batch_size, n_samples + n_importance)
+                    .reshape(-1)
             )
             index = index.reshape(-1)
             sdf = sdf[(xx, index)].reshape(batch_size, n_samples + n_importance)
@@ -412,8 +414,8 @@ class NeuconWRenderer:
         hit_mask = voxel_near_sfm > 0
         voxel_near = (voxel_near_sfm.float().reshape(-1, 1)) / self.radius
         voxel_far = (
-            voxel_far_sfm.float().reshape(-1, 1) + self.voxel_size
-        ) / self.radius
+                            voxel_far_sfm.float().reshape(-1, 1) + self.voxel_size
+                    ) / self.radius
 
         near[hit_mask] = voxel_near[hit_mask]
         far[hit_mask] = voxel_far[hit_mask]
@@ -523,15 +525,15 @@ class NeuconWRenderer:
 
         if self.render_bg and self.n_outside > 0:
             z_vals_outside = (
-                far / torch.flip(z_vals_outside, dims=[-1]) + 1.0 / self.n_samples
+                    far / torch.flip(z_vals_outside, dims=[-1]) + 1.0 / self.n_samples
             )
 
         # upsample inside voxel
         # 默认值：512
         if self.n_importance > 0:
-            with torch.no_grad():   # 该语句 wrap 起来的部分将不会计算梯度，也不会进行反向传播
+            with torch.no_grad():  # 该语句 wrap 起来的部分将不会计算梯度，也不会进行反向传播
                 pts = (
-                    rays_o[:, None, :] + rays_d[:, None, :] * z_vals[..., :, None]
+                        rays_o[:, None, :] + rays_d[:, None, :] * z_vals[..., :, None]
                 )  # N_rays, N_samples, 3
                 sdf = self.sdf(pts).reshape(batch_size, self.n_samples)
                 for i in range(self.up_sample_steps):
@@ -566,14 +568,14 @@ class NeuconWRenderer:
             bound_far_num = self.boundary_samples - bound_near_num
 
             bound_near_z = torch.linspace(0.0, 1.0, bound_near_num + 1, device=device)[
-                :-1
-            ]
+                           :-1
+                           ]
             bound_near_z = near + (z_vals[:, 0][:, None] - near) * bound_near_z[None, :]
 
             bound_far_z = torch.linspace(0.0, 1.0, bound_far_num + 1, device=device)[1:]
             bound_far_z = (
-                z_vals[:, -1][:, None]
-                + (far - z_vals[:, -1][:, None]) * bound_far_z[None, :]
+                    z_vals[:, -1][:, None]
+                    + (far - z_vals[:, -1][:, None]) * bound_far_z[None, :]
             )
 
             z_vals = torch.cat([bound_near_z, bound_far_z, z_vals], dim=-1)
@@ -583,16 +585,16 @@ class NeuconWRenderer:
 
     # 非环境的物体核心部分渲染
     def render_core(
-        self,
-        rays_o,
-        rays_d,
-        z_vals,
-        sample_dist,
-        a_embedded,
-        cos_anneal_ratio=0,
-        background_alpha=None,
-        background_sampled_color=None,
-        background_rgb=None,
+            self,
+            rays_o,
+            rays_d,
+            z_vals,
+            sample_dist,
+            a_embedded,
+            cos_anneal_ratio=0,
+            background_alpha=None,
+            background_sampled_color=None,
+            background_rgb=None,
     ):
         batch_size, n_samples = z_vals.shape
         device = rays_o.device
@@ -604,7 +606,7 @@ class NeuconWRenderer:
 
         # Section midpoints
         pts = (
-            rays_o[:, None, :] + rays_d[:, None, :] * mid_z_vals[..., :, None]
+                rays_o[:, None, :] + rays_d[:, None, :] * mid_z_vals[..., :, None]
         )  # n_rays, n_samples, 3
         dirs = rays_d[:, None, :].expand(pts.shape)
 
@@ -630,8 +632,8 @@ class NeuconWRenderer:
         # "cos_anneal_ratio" grows from 0 to 1 in the beginning training iterations. The anneal strategy below makes
         # the cos value "not dead" at the beginning training iterations, for better convergence.
         iter_cos = -(
-            F.relu(-true_cos * 0.5 + 0.5) * (1.0 - cos_anneal_ratio)
-            + F.relu(-true_cos) * cos_anneal_ratio
+                F.relu(-true_cos * 0.5 + 0.5) * (1.0 - cos_anneal_ratio)
+                + F.relu(-true_cos) * cos_anneal_ratio
         )  # always non-positive
 
         # print("prev_cdf shape: ", sdf.size(), dists.reshape(-1, 1).size())
@@ -709,13 +711,13 @@ class NeuconWRenderer:
             # print("background processed")
             # 各color、alpha按照inside_sphere比例与背景混合
             alpha = alpha * inside_sphere + background_alpha[:, :n_samples] * (
-                1.0 - inside_sphere
+                    1.0 - inside_sphere
             )
             alpha = torch.cat([alpha, background_alpha[:, n_samples:]], dim=-1)
             rgb = (
-                rgb * inside_sphere[:, :, None]
-                + background_sampled_color[:, :n_samples]
-                * (1.0 - inside_sphere)[:, :, None]
+                    rgb * inside_sphere[:, :, None]
+                    + background_sampled_color[:, :n_samples]
+                    * (1.0 - inside_sphere)[:, :, None]
             )
             rgb = torch.cat([rgb, background_sampled_color[:, n_samples:]], dim=1)
 
@@ -774,13 +776,13 @@ class NeuconWRenderer:
 
         # Eikonal loss [程函方程]
         gradient_error = (
-            torch.linalg.norm(
-                gradients.reshape(batch_size, n_samples, 3), ord=2, dim=-1
-            )
-            - 1.0
-        ) ** 2
+                                 torch.linalg.norm(
+                                     gradients.reshape(batch_size, n_samples, 3), ord=2, dim=-1
+                                 )
+                                 - 1.0
+                         ) ** 2
         gradient_error = (relax_inside_sphere * gradient_error).sum() / (
-            relax_inside_sphere.sum() + 1e-5
+                relax_inside_sphere.sum() + 1e-5
         )
 
         return {
@@ -804,17 +806,24 @@ class NeuconWRenderer:
     # 终极顶层渲染者：render
     # 相比pl新增label参数，仅在计算mask与floor loss用到，在ade20k分类中随便填一个就行
     def render(
-        self,
-        rays,
-        ts,
-        label,
-        perturb_overwrite=-1,
-        background_rgb=None,
-        cos_anneal_ratio=0.0,
+            self,
+            rays,
+            ts,
+            label,
+            perturb_overwrite=-1,
+            background_rgb=None,
+            cos_anneal_ratio=0.0,
     ):
         device = rays.device
 
+        # <输出>一些scene配置文件中的参数
+        print(f"【Output】self.origin={self.origin}")
+        print(f"【Output】type(self.origin)={type(self.origin)}")
+        print(f"【Output】self.radius={self.radius}")
+        print(f"【Output】self.sfm_to_gt={self.sfm_to_gt}")
+
         # only exceute once
+        # 指读取数据时的tensor变量copy一份到device所指定的GPU上去，之后的运算都在GPU上进行
         if not self.origin.is_cuda:
             self.origin = self.origin.to(device).float()
             self.sfm_to_gt = self.sfm_to_gt.to(device).float()
@@ -840,7 +849,7 @@ class NeuconWRenderer:
         rays_o = (rays_o / self.radius).float()
         depth_gt = (depth_gt / self.radius).float()
 
-        a_embedded = self.embeddings["a"](ts)   # ts为render()传入的第二个参数，大约是随机0-48取一个？
+        a_embedded = self.embeddings["a"](ts)  # ts为render()传入的第二个参数，大约是随机0-48取一个？
 
         perturb = self.perturb
         if perturb_overwrite >= 0:
@@ -917,7 +926,7 @@ class NeuconWRenderer:
         if self.depth_loss and torch.sum(depth_weight > 0) > 0:
             sfm_depth_loss = (((rendered_depth - depth_gt) ** 2) * depth_weight)[
                 depth_weight > 0
-            ]
+                ]
         else:
             sfm_depth_loss = torch.zeros_like(rendered_depth)
 

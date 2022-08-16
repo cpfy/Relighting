@@ -107,3 +107,56 @@ semantic_map = np.load(
 )["arr_0"]
 ```
 
+
+
+#### Q3
+
+`Renderer` 传入 `nerf_far_override=config.NEUCONW.NEAR_FAR_OVERRIDE` 参数时报错：
+
+```
+Traceback (most recent call last)
+<ipython-input-8-7a09947b27a6> in <module>
+     52     sample_range=config.NEUCONW.SAMPLE_RANGE,
+     53     boundary_samples=config.NEUCONW.BOUNDARY_SAMPLES,
+---> 54     nerf_far_override=config.NEUCONW.NEAR_FAR_OVERRIDE
+     55 )
+
+1 frames
+/content/drive/MyDrive/NeuralRecon-W-test/rendering/renderer.py in __init__(self, nerf, neuconw, embeddings, n_samples, n_importance, n_outside, up_sample_steps, perturb, origin, radius, s_val_base, spc_options, sample_range, boundary_samples, nerf_far_override, render_bg, trim_sphere, save_sample, save_step_sample, mesh_mask_list, floor_normal, depth_loss, floor_labels)
+    102 
+    103         # read unit sphere origin and radius from scene config
+--> 104         scene_config_path = os.path.join(spc_options["reconstruct_path"], "config.yaml")
+    105         if os.path.isfile(scene_config_path):
+    106             with open(scene_config_path, "r") as yamlfile:
+
+/usr/lib/python3.7/posixpath.py in join(a, *p)
+     78     will be discarded.  An empty last part will result in a path that
+     79     ends with a separator."""
+---> 80     a = os.fspath(a)
+     81     sep = _get_sep(a)
+     82     path = a
+
+TypeError: expected str, bytes or os.PathLike object, not NoneType
+```
+
+
+
+由于 `config.py` 中的 `_CN.DATASET.ROOT_DIR` 设置为 `None` 
+
+而 `spc_options["reconstruct_path"]` 沿用了config中的路径作为路径，修改为正确路径
+
+
+
+#### Q4
+
+上一问题的延申，`renderer.py` 某一行还愚蠢地检查了一下 `spc_options["reconstruct_path"]` 路径及文件是否存在，之后才给 `self.sfm_to_gt` 赋值
+
+```
+/content/drive/MyDrive/NeuralRecon-W-test/rendering/renderer.py in render(self, rays, ts, label, perturb_overwrite, background_rgb, cos_anneal_ratio)
+    823             self.origin = self.origin.to(device).float()
+--> 824             self.sfm_to_gt = self.sfm_to_gt.to(device).float()
+    825 
+
+AttributeError: 'numpy.ndarray' object has no attribute 'to'
+```
+
