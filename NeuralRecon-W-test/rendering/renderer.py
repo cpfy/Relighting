@@ -814,19 +814,29 @@ class NeuconWRenderer:
             background_rgb=None,
             cos_anneal_ratio=0.0,
     ):
-        device = rays.device
+        device = rays.device    # 也就是.cuda()
 
         # <输出>一些scene配置文件中的参数
-        print(f"【Output】self.origin={self.origin}")
-        print(f"【Output】type(self.origin)={type(self.origin)}")
-        print(f"【Output】self.radius={self.radius}")
-        print(f"【Output】self.sfm_to_gt={self.sfm_to_gt}")
+        print(f"【Output:render/820】self.origin={self.origin}")
+        print(f"【Output:render/821】self.radius={self.radius}")
+        print(f"【Output:render/822】self.sfm_to_gt={self.sfm_to_gt}")
 
         # only exceute once
         # 指读取数据时的tensor变量copy一份到device所指定的GPU上去，之后的运算都在GPU上进行
+        print(f"【Output:render/826】self.origin.is_cuda = {self.origin.is_cuda}")
+
+        # todo 尝试修改为不移动会怎样 --> 在rays_o - self.origin一行再报错
+        # 正确做法应该是把所有都to(device)移动到GPU
         if not self.origin.is_cuda:
             self.origin = self.origin.to(device).float()
             self.sfm_to_gt = self.sfm_to_gt.to(device).float()
+
+            # embeddings作为dict类型直接.to(device)会报错
+            # 可行写法见：https://discuss.pytorch.org/t/module-dictionary-to-gpu-or-cuda-device/86482/5
+            for key, value in self.embeddings.items():
+                self.embeddings[key] = self.embeddings[key].to(device)
+
+            print(f"Successfully move data to device!")
 
         # Decompose the inputs（从rays中拆解出参数）
         N_rays = rays.shape[0]
@@ -849,7 +859,10 @@ class NeuconWRenderer:
         rays_o = (rays_o / self.radius).float()
         depth_gt = (depth_gt / self.radius).float()
 
+        print(f"【Output:renderer/854】self.embeddings = {self.embeddings}")
+        print(f"【Output:renderer/855】ts = {ts}")
         a_embedded = self.embeddings["a"](ts)  # ts为render()传入的第二个参数，大约是随机0-48取一个？
+        print(f"【Output:renderer/857】a_embedded = {a_embedded}")
 
         perturb = self.perturb
         if perturb_overwrite >= 0:
@@ -978,12 +991,13 @@ class NeuconWRenderer:
 
         return floor_error, torch.ones_like(floor_error) * y_error
 
+    # 前文多次使用self.sdf()调用这里
     def sdf(self, pts):
         sdf = self.neuconw.sdf(pts)
         return sdf
 
     # 灯灯灯灯！此即吾所亟之函数！
-    # sdf_extract调用sdf(), rgb调用这个封装好的rgb()即可嘿嘿嘿
+    # sdf_extract调用sdf(), rgb调用这个封装好的rgb()即可嘿嘿嘿 --> 不过看来有区别
     def rgb(self, pts, rays_d, a_embedded):
         num_points, _, _ = pts.size()
 
@@ -992,6 +1006,6 @@ class NeuconWRenderer:
         inputs += [a_embedded]
         # print([it.size() for it in inputs])
 
-        static_out = self.neuconw(torch.cat(inputs, -1))
+        static_out = self.neuconw(torch.cat(inputs, -1))    # 本质上所有参数都是从neuconw.static_out取的
         rgb, inv_s, sdf, gradients = static_out
         return rgb.reshape(num_points, 3)

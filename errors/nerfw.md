@@ -160,3 +160,42 @@ TypeError: expected str, bytes or os.PathLike object, not NoneType
 AttributeError: 'numpy.ndarray' object has no attribute 'to'
 ```
 
+
+
+需要把 `reconstruct_path` 写对
+
+
+
+#### Q5
+
+经查，需要把数据、Model移动到device上再进行操作
+
+```
+/content/drive/MyDrive/NeuralRecon-W-test/rendering/renderer.py in render(self, rays, ts, label, perturb_overwrite, background_rgb, cos_anneal_ratio)
+    851 
+--> 852         a_embedded = self.embeddings["a"](ts)
+    853         print(f"【Output:renderer/852】ts = {ts}")
+...
+RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cpu and cuda:0! (when checking argument for argument index in method wrapper__index_selec
+```
+
+
+
+见：https://stackoverflow.com/questions/70102323/runtimeerror-expected-all-tensors-to-be-on-the-same-device-but-found-at-least
+
+> You did not move your model to `device`, only the data. You need to call `model.to(device)` before using it with data located on `device`.
+
+
+
+此处各种报错，输入的 `rays` 和 `ts` 完全不加 `.cuda()` 也不行。最后应该是要把所有renderer中的self参数移动到GPU
+
+
+
+#### Q6
+
+embeddings作为dict类型直接.to(device)会报错，需要逐元素移动
+
+写法参见：https://discuss.pytorch.org/t/module-dictionary-to-gpu-or-cuda-device/86482
+
+
+
