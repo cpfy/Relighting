@@ -168,6 +168,8 @@ AttributeError: 'numpy.ndarray' object has no attribute 'to'
 
 #### Q5
 
+非常频繁的错误
+
 经查，需要把数据、Model移动到device上再进行操作
 
 ```
@@ -187,7 +189,7 @@ RuntimeError: Expected all tensors to be on the same device, but found at least 
 
 
 
-此处各种报错，输入的 `rays` 和 `ts` 完全不加 `.cuda()` 也不行。最后应该是要把所有renderer中的self参数移动到GPU
+此处各种报错，输入的 `rays` 和 `ts` 完全不加 `.cuda()` 也不行。最后应该是要把所有renderer中的self参数移动到GPU。另外要注意NeRF和NeuconW这些model也要全部加 `.cuda()`
 
 
 
@@ -198,4 +200,27 @@ embeddings作为dict类型直接.to(device)会报错，需要逐元素移动
 写法参见：https://discuss.pytorch.org/t/module-dictionary-to-gpu-or-cuda-device/86482
 
 
+
+#### Q7
+
+上述步骤之后，悲催地发生了...
+
+```
+RuntimeError: CUDA out of memory. Tried to allocate 28.57 GiB (GPU 0; 15.90 GiB total capacity; 2.43 GiB already allocated; 12.85 GiB free; 2.44 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
+```
+
+
+
+两种思路
+
+1. 参考nerf_pl，在函数f处分割chunk来获取results返回值
+2. 全部去除cuda在CPU进行运算
+
+
+
+思路1最终删掉两处sdf还是不够
+
+```
+RuntimeError: CUDA out of memory. Tried to allocate 472.00 MiB (GPU 0; 15.90 GiB total capacity; 14.53 GiB already allocated; 425.75 MiB free; 14.87 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
+```
 

@@ -168,7 +168,11 @@ class NeRF(nn.Module):
 
         h = input_pts
         for i, l in enumerate(self.pts_linears):
-            h = self.pts_linears[i](h)
+            print(f"Device of h: {h.device}")   # 测试查看参数所在设备：Cuda
+            print(f"Value of pts: {self.pts_linears}")  # ModuleList各个层
+            # print(f"Device of pts: {self.pts_linears.device}")
+
+            h = self.pts_linears[i](h)  # <报错> Expected all tensors to be on the same device
             h = F.relu(h)
             if i in self.skips:
                 h = torch.cat([input_pts, h], -1)

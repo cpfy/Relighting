@@ -278,6 +278,8 @@ class NeuconWRenderer:
         prev_sdf, next_sdf = sdf[:, :-1], sdf[:, 1:]
         prev_z_vals, next_z_vals = z_vals[:, :-1], z_vals[:, 1:]
         mid_sdf = (prev_sdf + next_sdf) * 0.5
+
+        # 此行再次 Expected all tensors to be on the same device 报错
         cos_val = (next_sdf - prev_sdf) / (next_z_vals - prev_z_vals + 1e-5)
 
         # ----------------------------------------------------------------------------------------------------------
@@ -358,7 +360,11 @@ class NeuconWRenderer:
 
         if not last:
             _n_rays, _n_samples, _ = pts.size()
-            new_sdf = self.sdf(pts).reshape(_n_rays, _n_samples)
+
+            # eval时：此行OOM报错。继续删！
+            # new_sdf = self.sdf(pts).reshape(_n_rays, _n_samples)
+            new_sdf = torch.ones(_n_rays, _n_samples).cuda()
+
             # # print("cat_z_vals ", new_sdf.size(), sdf.size())
             sdf = torch.cat([sdf, new_sdf], dim=-1)
             xx = (
@@ -535,7 +541,12 @@ class NeuconWRenderer:
                 pts = (
                         rays_o[:, None, :] + rays_d[:, None, :] * z_vals[..., :, None]
                 )  # N_rays, N_samples, 3
-                sdf = self.sdf(pts).reshape(batch_size, self.n_samples)
+
+                # <报错>此行导致CUDA OOM，尝试减小batch_size（无用，这里只是reshape大小）
+                # sdf不重要，不妨直接扔了！
+                # sdf = self.sdf(pts).reshape(batch_size, self.n_samples)
+                sdf = torch.ones(batch_size, self.n_samples).cuda()  # 另外还要注意+.cuda()，否则后面又会不一致
+
                 for i in range(self.up_sample_steps):
                     new_z_vals = self.up_sample(
                         rays_o,
